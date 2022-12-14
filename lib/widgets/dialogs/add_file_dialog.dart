@@ -1,15 +1,21 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:zim/utils/theme_config.dart';
 
-import '../../../utils/dialogs.dart';
-import '../../../widgets/custom_alert.dart';
+import '../../utils/dialogs.dart';
+import '../custom_alert.dart';
 
-class AddFileDialog extends StatelessWidget {
+class AddFileDialog extends StatefulWidget {
   final String path;
 
-  AddFileDialog({super.key, required this.path});
+  const AddFileDialog({super.key, required this.path});
 
+  @override
+  State<AddFileDialog> createState() => _AddFileDialogState();
+}
+
+class _AddFileDialogState extends State<AddFileDialog> {
   final TextEditingController name = TextEditingController();
 
   @override
@@ -51,13 +57,14 @@ class AddFileDialog extends StatelessWidget {
                       ),
                       side: MaterialStateProperty.all(
                         BorderSide(
-                            color: Theme.of(context).colorScheme.secondary),
+                          color: ThemeConfig.darkBg,
+                        ),
                       ),
                     ),
                     child: Text(
                       'Cancel',
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.secondary,
+                        color: ThemeConfig.darkBg,
                       ),
                     ),
                   ),
@@ -68,8 +75,9 @@ class AddFileDialog extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: () async {
                       if (name.text.isNotEmpty) {
-                        if (!Directory('$path/${name.text}').existsSync()) {
-                          await Directory('$path/${name.text}')
+                        if (!Directory('${widget.path}/${name.text}')
+                            .existsSync()) {
+                          await Directory('${widget.path}/${name.text}')
                               .create()
                               .catchError((e) {
                             // print(e.toString());
@@ -82,21 +90,25 @@ class AddFileDialog extends StatelessWidget {
                           Dialogs.showToast(
                               'A Folder with that name already exists!');
                         }
+                        if (!mounted) return;
                         Navigator.pop(context);
                       }
                     },
                     style: ButtonStyle(
                       backgroundColor: MaterialStateProperty.all<Color>(
-                          Theme.of(context).colorScheme.secondary),
+                        ThemeConfig.primary,
+                      ),
                       shape: MaterialStateProperty.all(
                         RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(5.0),
                         ),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Create',
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(
+                        color: ThemeConfig.darkBg,
+                      ),
                     ),
                   ),
                 ),

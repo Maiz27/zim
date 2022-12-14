@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:archive/archive_io.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:mime_type/mime_type.dart';
 import 'package:path/path.dart';
@@ -9,6 +11,7 @@ import 'package:zim/utils/extensions.dart';
 
 class FileUtils {
   static String waPath = '/storage/emulated/0/WhatsApp/Media/.Statuses';
+  static bool decompressing = false;
 
   /// Convert Byte to KB, MB, .......
   static String formatBytes(bytes, decimals) {
@@ -60,7 +63,7 @@ class FileUtils {
             await getAllFilesInPath(dir.path, showHidden: showHidden);
       } catch (e) {
         allFilesInPath = [];
-        print(e);
+        // print(e);
       }
       files.addAll(allFilesInPath);
     }
@@ -125,10 +128,29 @@ class FileUtils {
     return files;
   }
 
+  static Future<bool> extractArchive(String source, String destination) async {
+    decompressing = true;
+    List supported = ['.zip', '.tar', '.zlib', '.gz', 'bz2', '.xz'];
+    if (supported.contains(extension(source))) {
+      try {
+        await extractFileToDisk(source, destination).then((value) => {
+              decompressing = false,
+            });
+        return true;
+      } catch (e) {
+        print(e.toString());
+        return false;
+      }
+    } else {
+      Fluttertoast.showToast(msg: 'File Type not supported!');
+      return false;
+    }
+  }
+
   static String formatTime(String iso) {
     DateTime date = DateTime.parse(iso);
     DateTime now = DateTime.now();
-    DateTime yDay = DateTime.now().subtract(Duration(days: 1));
+    DateTime yDay = DateTime.now().subtract(const Duration(days: 1));
     DateTime dateFormat = DateTime.parse(
         '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}T00:00:00.000Z');
     DateTime today = DateTime.parse(
@@ -141,7 +163,7 @@ class FileUtils {
     } else if (dateFormat == yesterday) {
       return 'Yesterday ${DateFormat('HH:mm').format(DateTime.parse(iso))}';
     } else {
-      return '${DateFormat('MMM dd, HH:mm').format(DateTime.parse(iso))}';
+      return DateFormat('MMM dd, HH:mm').format(DateTime.parse(iso));
     }
   }
 

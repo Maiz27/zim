@@ -22,17 +22,17 @@ class DirectoryItem extends StatelessWidget {
     return ListTile(
       onTap: () => tap(),
       contentPadding: const EdgeInsets.all(0),
-      leading: Container(
+      leading: const SizedBox(
         height: 40,
         width: 40,
-        child: const Center(
+        child: Center(
           child: Icon(
             Icons.folder,
           ),
         ),
       ),
       title: Text(
-        '${basename(file.path)}',
+        basename(file.path),
         style: const TextStyle(
           fontSize: 14,
         ),

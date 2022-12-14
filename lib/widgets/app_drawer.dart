@@ -1,8 +1,14 @@
-import 'package:flutter/material.dart';
-import 'package:zim/utils/icon_font_helper.dart';
-import 'package:zim/widgets/icon_font.dart';
+// ignore_for_file: unused_import
 
+import 'package:flutter/material.dart';
+
+import '../screens/main/browse.dart';
+import '../screens/main/settings.dart';
+import '../screens/main/share.dart';
+import '../utils/icon_font_helper.dart';
+import '../utils/navigate.dart';
 import '../utils/theme_config.dart';
+import 'icon_font.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({
@@ -22,7 +28,7 @@ class AppDrawer extends StatelessWidget {
             width: 150,
             margin: const EdgeInsets.only(bottom: 50),
             decoration: BoxDecoration(
-              color: ThemeConfig.darkBg.withOpacity(0.15),
+              color: Theme.of(context).backgroundColor.withOpacity(0.1),
               borderRadius: const BorderRadius.all(
                 Radius.circular(40),
               ),
@@ -35,25 +41,35 @@ class AppDrawer extends StatelessWidget {
             height: 2,
             thickness: 2,
           ),
-          const ListTile(
-            leading: IconFont(size: 30, iconName: IconFontHelper.folder),
-            title: Text('Browse'),
+          ListTile(
+            leading: const IconFont(size: 30, iconName: IconFontHelper.folder),
+            title: const Text('Browse'),
+            onTap: () {
+              Navigate.pushPageReplacement(context, const Browse());
+            },
           ),
           const Divider(
             height: 2,
             thickness: 2,
           ),
-          const ListTile(
-            leading: IconFont(size: 30, iconName: IconFontHelper.share),
-            title: Text('Share'),
+          ListTile(
+            leading: const IconFont(size: 30, iconName: IconFontHelper.share),
+            title: const Text('Share'),
+            onTap: () {
+              Navigate.pushPageReplacement(context, const Share());
+            },
           ),
           const Divider(
             height: 2,
             thickness: 2,
           ),
-          const ListTile(
-            leading: IconFont(size: 30, iconName: IconFontHelper.settings),
-            title: Text('Settings'),
+          ListTile(
+            leading:
+                const IconFont(size: 30, iconName: IconFontHelper.settings),
+            title: const Text('Settings'),
+            onTap: () {
+              Navigate.pushPageReplacement(context, const Settings());
+            },
           ),
           const Divider(
             height: 2,

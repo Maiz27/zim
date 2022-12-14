@@ -4,16 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path_lib;
 import 'package:provider/provider.dart';
 
-import '../../providers/category_provider.dart';
-import '../../utils/dialogs.dart';
-import '../../utils/file_utils.dart';
-import '../../widgets/custom_divider.dart';
-import '../../widgets/dir_item.dart';
-import '../../widgets/file_item.dart';
-import '../../widgets/path_bar.dart';
-import '../../widgets/sort_sheet.dart';
-import 'widgets/add_file_dialog.dart';
-import 'widgets/rename_file_dialog.dart';
+import '../providers/category_provider.dart';
+import '../utils/dialogs.dart';
+import '../utils/file_utils.dart';
+import '../utils/theme_config.dart';
+import '../widgets/custom_divider.dart';
+import '../widgets/dialogs/decompress_archive_dialog.dart';
+import '../widgets/dir_item.dart';
+import '../widgets/file/file_item.dart';
+import '../widgets/path_bar.dart';
+import '../widgets/sort_sheet.dart';
+import '../widgets/dialogs/add_file_dialog.dart';
+import '../widgets/dialogs/rename_file_dialog.dart';
 
 class Folder extends StatefulWidget {
   final String title;
@@ -168,7 +170,7 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
           replacement: const Center(child: Text('There\'s nothing here')),
           visible: files.isNotEmpty,
           child: ListView.separated(
-            padding: const EdgeInsets.only(left: 20),
+            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
             itemCount: files.length,
             itemBuilder: (BuildContext context, int index) {
               FileSystemEntity file = files[index];
@@ -198,18 +200,21 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
                   } else if (v == 1) {
                     deleteFile(false, file);
                   } else if (v == 2) {
-                    /// TODO: Implement Share file feature
+                    decompressDialog(context, file.path, file.parent.path);
+                  } else if (v == 3) {
+                    // TODO: Implement Share file feature
                     // print('Share');
                   }
                 },
               );
             },
             separatorBuilder: (BuildContext context, int index) {
-              return CustomDivider();
+              return const CustomDivider();
             },
           ),
         ),
         floatingActionButton: FloatingActionButton(
+          backgroundColor: ThemeConfig.primary,
           onPressed: () => addDialog(context, path),
           tooltip: 'Add Folder',
           child: const Icon(Icons.add),
@@ -247,6 +252,17 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
     await showDialog(
       context: context,
       builder: (context) => RenameFileDialog(path: path, type: type),
+    );
+    getFiles();
+  }
+
+  decompressDialog(BuildContext context, String path, String parent) async {
+    await showDialog(
+      context: context,
+      builder: (context) => DecompressArchiveDialog(
+        path: path,
+        parent: parent,
+      ),
     );
     getFiles();
   }

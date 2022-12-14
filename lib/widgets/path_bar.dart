@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../utils/theme_config.dart';
+
 class PathBar extends StatelessWidget implements PreferredSizeWidget {
   final List paths;
   final Function(int) onChanged;
   final IconData? icon;
 
-  PathBar({
+  const PathBar({
     Key? key,
     required this.paths,
     required this.onChanged,
@@ -14,7 +16,7 @@ class PathBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: 50,
       child: Align(
         alignment: Alignment.centerLeft,
@@ -30,8 +32,8 @@ class PathBar extends StatelessWidget implements PreferredSizeWidget {
                 icon: Icon(
                   icon ?? Icons.smartphone,
                   color: index == paths.length - 1
-                      ? Theme.of(context).colorScheme.secondary
-                      : Theme.of(context).textTheme.headline6!.color,
+                      ? ThemeConfig.accent
+                      : ThemeConfig.lightBg,
                 ),
                 onPressed: () => onChanged(index),
               );
@@ -49,8 +51,8 @@ class PathBar extends StatelessWidget implements PreferredSizeWidget {
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: index == paths.length - 1
-                            ? Theme.of(context).colorScheme.secondary
-                            : Theme.of(context).textTheme.headline6!.color,
+                            ? ThemeConfig.accent
+                            : ThemeConfig.lightBg,
                       ),
                     ),
                   ),
@@ -59,7 +61,10 @@ class PathBar extends StatelessWidget implements PreferredSizeWidget {
             );
           },
           separatorBuilder: (BuildContext context, int index) {
-            return const Icon(Icons.chevron_right);
+            return Icon(
+              Icons.chevron_right,
+              color: ThemeConfig.darkBg,
+            );
           },
         ),
       ),

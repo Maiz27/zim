@@ -2,9 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path_lib;
+import 'package:zim/utils/theme_config.dart';
 
-import '../../../utils/dialogs.dart';
-import '../../../widgets/custom_alert.dart';
+import '../../utils/dialogs.dart';
+import '../custom_alert.dart';
 
 class RenameFileDialog extends StatefulWidget {
   final String path;
@@ -13,7 +14,7 @@ class RenameFileDialog extends StatefulWidget {
   const RenameFileDialog({super.key, required this.path, required this.type});
 
   @override
-  _RenameFileDialogState createState() => _RenameFileDialogState();
+  State<RenameFileDialog> createState() => _RenameFileDialogState();
 }
 
 class _RenameFileDialogState extends State<RenameFileDialog> {
@@ -67,13 +68,14 @@ class _RenameFileDialogState extends State<RenameFileDialog> {
                       ),
                       side: MaterialStateProperty.all(
                         BorderSide(
-                            color: Theme.of(context).colorScheme.secondary),
+                          color: ThemeConfig.darkBg,
+                        ),
                       ),
                     ),
                     child: Text(
                       'Cancel',
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.secondary,
+                        color: ThemeConfig.darkBg,
                       ),
                     ),
                   ),
@@ -125,21 +127,22 @@ class _RenameFileDialogState extends State<RenameFileDialog> {
                             });
                           }
                         }
+                        if (!mounted) return;
                         Navigator.pop(context);
                       }
                     },
                     style: ButtonStyle(
                       backgroundColor: MaterialStateProperty.all<Color>(
-                          Theme.of(context).colorScheme.secondary),
+                          Theme.of(context).primaryColor),
                       shape: MaterialStateProperty.all(
                         RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(5.0),
                         ),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Rename',
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(color: ThemeConfig.darkBg),
                     ),
                   ),
                 ),

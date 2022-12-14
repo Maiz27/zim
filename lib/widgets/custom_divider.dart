@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 
 class CustomDivider extends StatelessWidget {
+  const CustomDivider({super.key});
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     return Stack(
       children: [
         Align(
-          alignment: Alignment.centerRight,
+          alignment: Alignment.center,
           child: Container(
             height: 1,
             color: Theme.of(context).dividerColor,
-            width: size.width - 70,
+            width: size.width,
           ),
         ),
       ],

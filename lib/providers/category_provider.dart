@@ -76,13 +76,37 @@ class CategoryProvider extends ChangeNotifier {
       // print('RECEIVED SERVER PORT');
       // print(files);
       files.forEach((file) {
-        String mimeType = mime(file.path) ?? '';
-        if (mimeType.split('/')[0] == type) {
-          images.add(file);
-          imageTabs
-              .add('${file.path.split('/')[file.path.split('/').length - 2]}');
-          imageTabs = imageTabs.toSet().toList();
+        switch (type) {
+          case 'application':
+            var ex = extension(file.path);
+            if (ex == '.apk') {
+              images.add(file);
+              imageTabs.add(
+                  '${file.path.split('/')[file.path.split('/').length - 2]}');
+              imageTabs = imageTabs.toSet().toList();
+            }
+            break;
+          case 'archive':
+            var ex = extension(file.path);
+
+            if (['.zip', '.rar', '.tar', '.gz', '.7z', '.zlib', 'bz2', '.xz']
+                .contains(ex)) {
+              images.add(file);
+              imageTabs.add(
+                  '${file.path.split('/')[file.path.split('/').length - 2]}');
+              imageTabs = imageTabs.toSet().toList();
+            }
+            break;
+          default:
+            String mimeType = mime(file.path) ?? '';
+            if (mimeType.split('/')[0] == type) {
+              images.add(file);
+              imageTabs.add(
+                  '${file.path.split('/')[file.path.split('/').length - 2]}');
+              imageTabs = imageTabs.toSet().toList();
+            }
         }
+
         notifyListeners();
       });
       currentFiles = images;
@@ -91,6 +115,12 @@ class CategoryProvider extends ChangeNotifier {
       IsolateNameServer.removePortNameMapping('${isolateName}_2');
     });
   }
+
+  /* 
+  x-rar-compressed => rar-compressed
+  vnd.android.package-archive => apk
+  zip => zip
+  */
 
   static getAllFilesWithIsolate(Map<String, dynamic> context) async {
     // print(context);

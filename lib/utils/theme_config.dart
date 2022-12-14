@@ -2,14 +2,6 @@ import 'package:flutter/material.dart';
 
 class ThemeConfig {
   //Colors for theme
-  // static Color lightPrimary = Color(0xfff3f4f9);
-  // static Color darkPrimary = Color(0xff1f1f1f);
-  // static Color lightAccent = Color(0xff597ef7);
-  // static Color darkAccent = Color(0xff597ef7);
-  // static Color lightBG = Color(0xfff3f4f9);
-  // static Color darkBG = Color(0xff121212);
-  // static Color backgroundSmokeWhite = Color(0xffB0C6D0).withOpacity(0.1);
-
   static Color primary = const Color(0xFF11999E);
   static Color accent = const Color(0xFF30E3CA);
   static Color secondary = const Color(0xFF406882);
@@ -18,51 +10,80 @@ class ThemeConfig {
   static Color lightBg = const Color(0xFFE5FAF6);
 
   static ThemeData lightTheme = ThemeData(
-    backgroundColor: lightBg,
+    brightness: Brightness.light,
+    backgroundColor: darkBg,
     primaryColor: primary,
     scaffoldBackgroundColor: lightBg,
     appBarTheme: AppBarTheme(
-      elevation: 0,
+      elevation: 4,
       color: primary,
-      titleTextStyle: const TextStyle(
-        color: Colors.black,
+      titleTextStyle: TextStyle(
+        color: lightBg,
         fontSize: 20,
         fontWeight: FontWeight.w800,
       ),
-      iconTheme: const IconThemeData(
-        color: Colors.black,
+    ),
+    drawerTheme: DrawerThemeData(
+      backgroundColor: lightBg,
+      elevation: 2,
+    ),
+    progressIndicatorTheme: ProgressIndicatorThemeData(
+      circularTrackColor: darkBg.withOpacity(0.1),
+      color: primary,
+    ),
+    popupMenuTheme: PopupMenuThemeData(
+      color: darkBg,
+      textStyle: TextStyle(color: lightBg),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      focusColor: primary,
+      focusedBorder: UnderlineInputBorder(
+        borderSide: BorderSide(
+          color: primary,
+        ),
       ),
     ),
-    textTheme: TextTheme(
-      //color for icons (icon fonts) base on theme
-      headline6: TextStyle(
-        color: darkBg,
-      ),
+    textSelectionTheme: TextSelectionThemeData(
+      cursorColor: accent, //thereby
     ),
   );
 
   static ThemeData darkTheme = ThemeData(
     brightness: Brightness.dark,
-    backgroundColor: darkBg,
+    backgroundColor: lightBg,
     primaryColor: primary,
     scaffoldBackgroundColor: darkBg,
     appBarTheme: AppBarTheme(
-      elevation: 0,
+      elevation: 4,
       color: primary,
       titleTextStyle: const TextStyle(
         color: Colors.white,
         fontSize: 20,
         fontWeight: FontWeight.w800,
       ),
-      iconTheme: const IconThemeData(
-        color: Colors.white,
+    ),
+    drawerTheme: DrawerThemeData(
+      backgroundColor: darkBg,
+      elevation: 2,
+    ),
+    progressIndicatorTheme: ProgressIndicatorThemeData(
+      circularTrackColor: lightBg.withOpacity(0.8),
+      color: primary,
+    ),
+    popupMenuTheme: PopupMenuThemeData(
+      color: lightBg,
+      textStyle: TextStyle(color: darkBg),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      focusColor: primary,
+      focusedBorder: UnderlineInputBorder(
+        borderSide: BorderSide(
+          color: primary,
+        ),
       ),
     ),
-    textTheme: TextTheme(
-      //color for icons (icon fonts) base on theme
-      headline6: TextStyle(
-        color: lightBg,
-      ),
+    textSelectionTheme: TextSelectionThemeData(
+      cursorColor: accent, //thereby
     ),
   );
 }

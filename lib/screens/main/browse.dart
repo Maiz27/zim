@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:zim/widgets/storage_section.dart';
 
 import '../../providers/core_provider.dart';
 import '../../widgets/app_drawer.dart';
-import '../../widgets/category_section.dart';
+import '../../widgets/category/category_section.dart';
+import '../../widgets/storage/storage_section.dart';
 import '../search.dart';
 
 class Browse extends StatefulWidget {
@@ -59,55 +59,6 @@ class _BrowseState extends State<Browse> {
     return double.parse((usedSpace / totalSpace * 100).toStringAsFixed(1));
   }
 }
-
-// class _CategoriesSection extends StatelessWidget {
-//   @override
-//   Widget build(BuildContext context) {
-//     return ListView.separated(
-//       shrinkWrap: true,
-//       physics: const NeverScrollableScrollPhysics(),
-//       itemCount: Constants.categories.length,
-//       itemBuilder: (BuildContext context, int index) {
-//         Map category = Constants.categories[index];
-
-//         return ListTile(
-//           onTap: () {
-//             if (index == 0) {
-//               Navigate.pushPage(
-//                   context, Downloads(title: '${category['title']}'));
-//             } else if (index == 5) {
-//               Navigate.pushPage(context, const AppScreen());
-//             } else {
-//               Navigate.pushPage(
-//                 context,
-//                 index == 1 || index == 2
-//                     ? Images(title: '${category['title']}')
-//                     : Category(title: '${category['title']}'),
-//               );
-//             }
-//           },
-//           contentPadding: const EdgeInsets.all(0),
-//           leading: Container(
-//             height: 40,
-//             width: 40,
-//             decoration: BoxDecoration(
-//               shape: BoxShape.circle,
-//               border: Border.all(
-//                 color: Theme.of(context).dividerColor,
-//                 width: 2,
-//               ),
-//             ),
-//             child: Icon(category['icon'], size: 18, color: category['color']),
-//           ),
-//           title: Text('${category['title']}'),
-//         );
-//       },
-//       separatorBuilder: (BuildContext context, int index) {
-//         return CustomDivider();
-//       },
-//     );
-//   }
-// }
 
 // class _RecentFiles extends StatelessWidget {
 //   @override

@@ -1,42 +1,39 @@
 import 'dart:io';
-
-// ignore: unnecessary_import
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:mime_type/mime_type.dart';
 import 'package:open_file/open_file.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/category_provider.dart';
-import '../utils/consts.dart';
-import '../utils/file_utils.dart';
-import '../widgets/custom_loader.dart';
-import '../widgets/file_icon.dart';
+import '../../providers/category_provider.dart';
+import '../../utils/consts.dart';
+import '../../utils/file_utils.dart';
+import '../../widgets/custom_loader.dart';
+import '../../widgets/file/file_icon.dart';
 
-class Images extends StatefulWidget {
+//Category with Thumbnail
+class CategoryOne extends StatefulWidget {
   final String title;
-
-  const Images({
-    Key? key,
-    required this.title,
-  }) : super(key: key);
+  const CategoryOne({super.key, required this.title});
 
   @override
-  _ImagesState createState() => _ImagesState();
+  State<CategoryOne> createState() => _CategoryOneState();
 }
 
-class _ImagesState extends State<Images> {
+class _CategoryOneState extends State<CategoryOne> {
   @override
   void initState() {
     super.initState();
     SchedulerBinding.instance.addPostFrameCallback((_) {
-      if (widget.title.toLowerCase() == 'images') {
-        Provider.of<CategoryProvider>(context, listen: false)
-            .getImages('image');
-      } else {
-        Provider.of<CategoryProvider>(context, listen: false)
-            .getImages('video');
+      switch (widget.title.toLowerCase()) {
+        case 'images':
+          Provider.of<CategoryProvider>(context, listen: false)
+              .getImages('image');
+          break;
+        case 'video':
+          Provider.of<CategoryProvider>(context, listen: false)
+              .getImages('video');
+          break;
       }
     });
   }
@@ -47,7 +44,7 @@ class _ImagesState extends State<Images> {
       builder:
           (BuildContext context, CategoryProvider provider, Widget? child) {
         if (provider.loading) {
-          return Scaffold(body: CustomLoader());
+          return const Scaffold(body: CustomLoader());
         }
         return DefaultTabController(
           length: provider.imageTabs.length,
@@ -119,7 +116,7 @@ class _MediaTile extends StatelessWidget {
   final File file;
   final String mimeType;
 
-  _MediaTile({required this.file, required this.mimeType});
+  const _MediaTile({required this.file, required this.mimeType});
 
   @override
   Widget build(BuildContext context) {

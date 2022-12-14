@@ -4,7 +4,7 @@ class DirPopup extends StatelessWidget {
   final String path;
   final Function? popTap;
 
-  DirPopup({
+  const DirPopup({
     Key? key,
     required this.path,
     this.popTap,
@@ -15,13 +15,13 @@ class DirPopup extends StatelessWidget {
     return PopupMenuButton<int>(
       onSelected: (val) => popTap!(val),
       itemBuilder: (context) => [
-        PopupMenuItem(
+        const PopupMenuItem(
           value: 0,
           child: Text(
             'Rename',
           ),
         ),
-        PopupMenuItem(
+        const PopupMenuItem(
           value: 1,
           child: Text(
             'Delete',
@@ -32,8 +32,7 @@ class DirPopup extends StatelessWidget {
         Icons.arrow_drop_down,
         color: Theme.of(context).textTheme.headline6!.color,
       ),
-      color: Theme.of(context).scaffoldBackgroundColor,
-      offset: Offset(0, 30),
+      offset: const Offset(0, 30),
     );
   }
 }

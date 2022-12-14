@@ -7,8 +7,8 @@ import '../providers/category_provider.dart';
 import '../utils/file_utils.dart';
 import '../utils/navigate.dart';
 import '../widgets/dir_item.dart';
-import '../widgets/file_item.dart';
-import 'folder/folder.dart';
+import '../widgets/file/file_item.dart';
+import 'folder.dart';
 
 class Search extends SearchDelegate {
   final ThemeData themeData;
@@ -22,17 +22,17 @@ class Search extends SearchDelegate {
   ThemeData appBarTheme(BuildContext context) {
     final ThemeData theme = themeData;
     return theme.copyWith(
-      primaryTextTheme: theme.primaryTextTheme,
-      textTheme: theme.textTheme.copyWith(
-        headline1: theme.textTheme.headline1!.copyWith(
-          color: theme.primaryTextTheme.headline6!.color,
-        ),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        hintStyle: TextStyle(
-          color: theme.primaryTextTheme.headline6!.color,
-        ),
-      ),
+      primaryTextTheme: Theme.of(context).primaryTextTheme,
+      textTheme: Theme.of(context).textTheme.copyWith(
+            headline1: Theme.of(context).textTheme.headline1!.copyWith(
+                  color: Theme.of(context).primaryTextTheme.headline6!.color,
+                ),
+          ),
+      // inputDecorationTheme: InputDecorationTheme(
+      //   hintStyle: TextStyle(
+      //     color: theme.primaryTextTheme.headline6!.color,
+      //   ),
+      // ),
     );
   }
 

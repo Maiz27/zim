@@ -4,9 +4,14 @@ import 'package:provider/provider.dart';
 import '../providers/category_provider.dart';
 import '../utils/consts.dart';
 
-class SortSheet extends StatelessWidget {
+class SortSheet extends StatefulWidget {
   const SortSheet({super.key});
 
+  @override
+  State<SortSheet> createState() => _SortSheetState();
+}
+
+class _SortSheetState extends State<SortSheet> {
   @override
   Widget build(BuildContext context) {
     return FractionallySizedBox(
@@ -37,6 +42,7 @@ class SortSheet extends StatelessWidget {
                       await Provider.of<CategoryProvider>(context,
                               listen: false)
                           .setSort(index);
+                      if (!mounted) return;
                       Navigator.pop(context);
                     },
                     contentPadding: const EdgeInsets.all(0),
@@ -44,9 +50,9 @@ class SortSheet extends StatelessWidget {
                             Provider.of<CategoryProvider>(context,
                                     listen: false)
                                 .sort
-                        ? const Icon(
+                        ? Icon(
                             Icons.check,
-                            color: Colors.blue,
+                            color: Theme.of(context).primaryColor,
                             size: 16,
                           )
                         : const SizedBox(),
@@ -58,7 +64,7 @@ class SortSheet extends StatelessWidget {
                                 Provider.of<CategoryProvider>(context,
                                         listen: false)
                                     .sort
-                            ? Colors.blue
+                            ? Theme.of(context).primaryColor
                             : Theme.of(context).textTheme.headline6!.color,
                       ),
                     ),

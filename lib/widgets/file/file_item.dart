@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path/path.dart';
 
-import '../utils/file_utils.dart';
+import '../../utils/file_utils.dart';
 import 'file_icon.dart';
 import 'file_popup.dart';
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../utils/consts.dart';
+import '../../utils/consts.dart';
 import 'category_item.dart';
 
 class CategorySection extends StatelessWidget {
@@ -16,7 +16,7 @@ class CategorySection extends StatelessWidget {
         width: deviceWidth * 0.9,
         margin: const EdgeInsets.only(top: 20),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.1),
+          color: Theme.of(context).backgroundColor.withOpacity(0.1),
           borderRadius: const BorderRadius.all(
             Radius.circular(40),
           ),
@@ -36,6 +36,7 @@ class CategorySection extends StatelessWidget {
               title: Constants.categories[index]['title'],
               color: Constants.categories[index]['color'],
               icon: Constants.categories[index]['icon'],
+              screen: Constants.categories[index]['screen'],
             ),
           ),
         ),

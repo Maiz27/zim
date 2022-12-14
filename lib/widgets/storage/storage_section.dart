@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/core_provider.dart';
-import 'custom_loader.dart';
+import '../../providers/core_provider.dart';
+import '../custom_loader.dart';
 import 'storage_item.dart';
 
 var idx = 0;
@@ -22,7 +22,7 @@ class _StorageSectionState extends State<StorageSection> {
     var deviceHeight = MediaQuery.of(context).size.height;
     var deviceWidth = MediaQuery.of(context).size.width;
 
-    var list = ['Device'];
+    var list = [];
 
     int usedSpace;
     int totalSpace;
@@ -34,7 +34,7 @@ class _StorageSectionState extends State<StorageSection> {
           height: deviceHeight * 0.48,
           width: deviceWidth * 0.9,
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.1),
+            color: Theme.of(context).backgroundColor.withOpacity(0.1),
             borderRadius: const BorderRadius.all(
               Radius.circular(40),
             ),
@@ -43,14 +43,19 @@ class _StorageSectionState extends State<StorageSection> {
             Consumer<CoreProvider>(
                 builder: (BuildContext context, coreProvider, Widget? child) {
               if (coreProvider.storageLoading) {
-                return SizedBox(height: 100, child: CustomLoader());
+                return const SizedBox(height: 100, child: CustomLoader());
               }
               FileSystemEntity item = coreProvider.availableStorage[idx];
 
               String path = item.path.split('Android')[idx];
-
-              if (coreProvider.availableStorage.length == 2) {
-                list.add('SD');
+              list.clear();
+              for (int i = 0; i < coreProvider.availableStorage.length; i++) {
+                if (i == 0) {
+                  list.add('Device');
+                }
+                if (i == 1) {
+                  list.add('SD');
+                }
               }
 
               if (idx == 0) {
@@ -70,7 +75,7 @@ class _StorageSectionState extends State<StorageSection> {
                 title: list[idx],
                 path: path,
                 usedSpace: usedSpace,
-                totalSpace: totalSpace,
+                freeSpace: totalSpace - usedSpace,
                 onItemChange: handleStorageItemChanged,
                 items: list,
               );

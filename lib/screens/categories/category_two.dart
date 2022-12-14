@@ -4,21 +4,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/category_provider.dart';
-import '../utils/consts.dart';
-import '../widgets/custom_divider.dart';
-import '../widgets/custom_loader.dart';
-import '../widgets/file_item.dart';
+import '../../providers/category_provider.dart';
+import '../../utils/consts.dart';
+import '../../widgets/custom_divider.dart';
+import '../../widgets/custom_loader.dart';
+import '../../widgets/file/file_item.dart';
 
-class Category extends StatefulWidget {
+//Category with Icon
+class CategoryTwo extends StatefulWidget {
   final String title;
-  const Category({super.key, required this.title});
+  const CategoryTwo({super.key, required this.title});
 
   @override
-  State<Category> createState() => _CategoryState();
+  State<CategoryTwo> createState() => _CategoryTwoState();
 }
 
-class _CategoryState extends State<Category> {
+class _CategoryTwoState extends State<CategoryTwo> {
   @override
   void initState() {
     super.initState();
@@ -28,9 +29,10 @@ class _CategoryState extends State<Category> {
           Provider.of<CategoryProvider>(context, listen: false)
               .getAudios('audio');
           break;
-        case 'documents & others':
+        case 'documents':
           Provider.of<CategoryProvider>(context, listen: false)
               .getAudios('text');
+          break;
       }
     });
   }
@@ -41,7 +43,7 @@ class _CategoryState extends State<Category> {
       builder:
           (BuildContext context, CategoryProvider provider, Widget? child) {
         return provider.loading
-            ? Scaffold(body: CustomLoader())
+            ? const Scaffold(body: CustomLoader())
             : DefaultTabController(
                 length: provider.audioTabs.length,
                 child: Scaffold(
@@ -94,7 +96,7 @@ class _CategoryState extends State<Category> {
                                 },
                                 separatorBuilder:
                                     (BuildContext context, int index) {
-                                  return CustomDivider();
+                                  return const CustomDivider();
                                 },
                               );
                             },

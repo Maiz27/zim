@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 
-import '../screens/folder/folder.dart';
-import '../utils/consts.dart';
-import '../utils/file_utils.dart';
+import '../../screens/folder.dart';
+import '../../utils/consts.dart';
+import '../../utils/file_utils.dart';
+import '../../utils/navigate.dart';
+import '../../utils/theme_config.dart';
 
 class StorageItem extends StatelessWidget {
   final double percent;
   final String title;
   final String path;
   final int usedSpace;
-  final int totalSpace;
+  final int freeSpace;
   final Function onItemChange;
   final List items;
 
@@ -20,7 +22,7 @@ class StorageItem extends StatelessWidget {
     required this.title,
     required this.path,
     required this.usedSpace,
-    required this.totalSpace,
+    required this.freeSpace,
     required this.onItemChange,
     required this.items,
   });
@@ -32,13 +34,7 @@ class StorageItem extends StatelessWidget {
 
     return InkWell(
       onTap: (() {
-        Navigator.push(context,
-            MaterialPageRoute(builder: (BuildContext context) {
-          return Folder(
-            path: path,
-            title: 'Device',
-          );
-        }));
+        Navigate.pushPage(context, Folder(path: path, title: title));
       }),
       child: Column(
         children: [
@@ -50,9 +46,10 @@ class StorageItem extends StatelessWidget {
                 return DropdownMenuItem(
                   value: value,
                   child: Text(value,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         letterSpacing: 2,
+                        color: ThemeConfig.primary,
                       )),
                 );
               },
@@ -64,11 +61,16 @@ class StorageItem extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),
             child: CircularPercentIndicator(
+              progressColor: Theme.of(context).progressIndicatorTheme.color,
               radius: deviceWidth * 0.3,
               lineWidth: 25,
               percent: percent / 100,
               animation: true,
               animationDuration: 1000,
+              backgroundColor: Color(Theme.of(context)
+                  .progressIndicatorTheme
+                  .circularTrackColor!
+                  .value),
               circularStrokeCap: CircularStrokeCap.round,
               center: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -84,7 +86,7 @@ class StorageItem extends StatelessWidget {
                   const Text(
                     'Used',
                     style: TextStyle(
-                      fontWeight: FontWeight.bold,
+                      // fontWeight: FontWeight.bold,
                       fontSize: 35,
                     ),
                   ),
@@ -103,11 +105,11 @@ class StorageItem extends StatelessWidget {
                     Container(
                       height: 30,
                       width: 30,
-                      decoration: const BoxDecoration(
-                        borderRadius: BorderRadius.all(
+                      decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.all(
                           Radius.circular(10),
                         ),
-                        color: Colors.red,
+                        color: ThemeConfig.primary,
                       ),
                     ),
                     const SizedBox(
@@ -139,12 +141,13 @@ class StorageItem extends StatelessWidget {
                     Container(
                       height: 30,
                       width: 30,
-                      decoration: const BoxDecoration(
-                        borderRadius: BorderRadius.all(
-                          Radius.circular(10),
-                        ),
-                        color: Colors.grey,
-                      ),
+                      decoration: BoxDecoration(
+                          borderRadius: const BorderRadius.all(
+                            Radius.circular(10),
+                          ),
+                          color: Theme.of(context)
+                              .progressIndicatorTheme
+                              .circularTrackColor),
                     ),
                     const SizedBox(
                       width: 15,
@@ -153,7 +156,7 @@ class StorageItem extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         const Text(
-                          'Total',
+                          'Free',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 15,
@@ -161,7 +164,7 @@ class StorageItem extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          '${FileUtils.formatBytes(totalSpace, 2)} ',
+                          '${FileUtils.formatBytes(freeSpace, 2)} ',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                           ),
