@@ -45,7 +45,7 @@ To get started you must have a working flutter development environment.
 git clone https://github.com/Maiz27/zim.git
 ```
 
-2. Install packages
+2. Install dependencies 
 
 ```sh
 flutter pub get
