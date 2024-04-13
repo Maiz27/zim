@@ -46,7 +46,10 @@ class FileIcon extends StatelessWidget {
       );
     } else if (_extension == '.epub' ||
         _extension == '.pdf' ||
-        _extension == '.mobi') {
+        _extension == '.mobi' ||
+        _extension == '.doc' ||
+        _extension == '.docx' ||
+        _extension == '.json') {
       return Padding(
         padding: const EdgeInsets.all(8.0),
         child: IconFont(

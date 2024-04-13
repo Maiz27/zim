@@ -170,7 +170,8 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
           replacement: const Center(child: Text('There\'s nothing here')),
           visible: files.isNotEmpty,
           child: ListView.separated(
-            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+            padding:
+                const EdgeInsets.only(top: 10, bottom: 80, left: 10, right: 10),
             itemCount: files.length,
             itemBuilder: (BuildContext context, int index) {
               FileSystemEntity file = files[index];

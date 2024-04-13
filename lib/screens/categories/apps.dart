@@ -23,7 +23,7 @@ class _AppsState extends State<Apps> {
     super.initState();
     SchedulerBinding.instance.addPostFrameCallback((_) {
       Provider.of<CategoryProvider>(context, listen: false)
-          .getImages('application');
+          .getThumbnailFiles('application');
     });
   }
 
@@ -63,7 +63,7 @@ class _AppsState extends State<Apps> {
             ),
             body: idx == 0
                 ? Visibility(
-                    visible: provider.images.isNotEmpty,
+                    visible: provider.thumbnailFiles.isNotEmpty,
                     replacement: const Center(child: Text('No Files Found')),
                     child: ListView.separated(
                       itemCount: provider.currentFiles.length,

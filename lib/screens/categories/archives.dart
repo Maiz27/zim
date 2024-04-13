@@ -20,7 +20,7 @@ class _ArchivesState extends State<Archives> {
     super.initState();
     SchedulerBinding.instance.addPostFrameCallback((_) {
       Provider.of<CategoryProvider>(context, listen: false)
-          .getImages('archive');
+          .getThumbnailFiles('archive');
     });
   }
 
