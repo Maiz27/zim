@@ -44,16 +44,25 @@ class _SplashState extends State<Splash> {
   }
 
   requestPermission() async {
-    PermissionStatus status = await Permission.storage.request();
-    if (status.isGranted) {
+    if (await Permission.manageExternalStorage.isDenied) {
+      if (await Permission.manageExternalStorage
+          .request()
+          .isPermanentlyDenied) {
+        // The user opted to never again see the permission request dialog for this
+        // app. The only way to change the permission's status now is to let the
+        // user manually enable it in the system settings.
+        openAppSettings();
+      } else {
+        // You can request the permission again.
+        requestPermission();
+      }
+    } else {
       if (!mounted) return;
       if (!widget.first) {
         Navigate.pushPageReplacement(context, const Browse());
       } else {
         Navigate.pushPageReplacement(context, const GetStarted());
       }
-    } else {
-      Dialogs.showToast('Please Grant Storage Permissions');
     }
   }
 

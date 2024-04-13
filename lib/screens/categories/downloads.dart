@@ -51,13 +51,3 @@ class _DownloadsState extends State<Downloads> {
     );
   }
 }
-
-// return ListView.separated(
-//                       padding: const EdgeInsets.only(left: 20),
-//                       itemCount: provider.downloads.length,
-//                       itemBuilder: (BuildContext context, int index) {
-//                         return FileItem(file: provider.downloads[index]);
-//                       },
-//                       separatorBuilder: (BuildContext context, int index) {
-//                         return const CustomDivider();
-//                       },

@@ -10,7 +10,7 @@ import 'package:zim/utils/file_utils.dart';
 
 class CoreProvider extends ChangeNotifier {
   List<FileSystemEntity> availableStorage = <FileSystemEntity>[];
-  List<FileSystemEntity> recentFiles = <FileSystemEntity>[];
+  List<File> recentFiles = <File>[];
   final isolates = IsolateHandler();
   int totalSpace = 0;
   int freeSpace = 0;
@@ -65,10 +65,10 @@ class CoreProvider extends ChangeNotifier {
     );
     ReceivePort port = ReceivePort();
     IsolateNameServer.registerPortWithName(port.sendPort, '${isolateName}_2');
-    port.listen((message) {
-      // print('RECEIVED SERVER PORT');
-      // print(message);
-      recentFiles.addAll(message);
+    port.listen((filePaths) {
+      // Recreate the File objects from the paths
+      recentFiles.addAll(
+          (filePaths as List<String>).map((filePath) => File(filePath)));
       setRecentLoading(false);
       port.close();
       IsolateNameServer.removePortNameMapping('${isolateName}_2');
@@ -76,14 +76,14 @@ class CoreProvider extends ChangeNotifier {
   }
 
   static getFilesWithIsolate(Map<String, dynamic> context) async {
-    // print(context);
     String isolateName = context['name'];
     List<FileSystemEntity> l =
         await FileUtils.getRecentFiles(showHidden: false);
     final messenger = HandledIsolate.initialize(context);
     final SendPort? send =
         IsolateNameServer.lookupPortByName('${isolateName}_2');
-    send!.send(l);
+    // Convert the FileSystemEntity objects to their paths before sending
+    send!.send(l.map((file) => file.path).toList());
     messenger.send('done');
   }
 

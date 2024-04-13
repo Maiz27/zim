@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:isolate_handler/isolate_handler.dart';
 import 'package:mime_type/mime_type.dart';
+import 'package:path/path.dart' as path;
 import 'package:path/path.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zim/utils/file_utils.dart';
@@ -56,6 +57,7 @@ class CategoryProvider extends ChangeNotifier {
   }
 
   getImages(String type) async {
+    print('getImages started');
     setLoading(true);
     imageTabs.clear();
     images.clear();
@@ -65,6 +67,7 @@ class CategoryProvider extends ChangeNotifier {
       getAllFilesWithIsolate,
       name: isolateName,
       onReceive: (val) {
+        print('getAllFilesWithIsolate completed');
         // print(val);
         isolates.kill(isolateName);
       },
@@ -72,10 +75,10 @@ class CategoryProvider extends ChangeNotifier {
     );
     ReceivePort port = ReceivePort();
     IsolateNameServer.registerPortWithName(port.sendPort, '${isolateName}_2');
-    port.listen((files) {
-      // print('RECEIVED SERVER PORT');
-      // print(files);
-      files.forEach((file) {
+    port.listen((filePaths) {
+      filePaths.forEach((filePath) {
+        File file = File(filePath);
+        // Rest of your code...
         switch (type) {
           case 'application':
             var ex = extension(file.path);
@@ -106,11 +109,11 @@ class CategoryProvider extends ChangeNotifier {
               imageTabs = imageTabs.toSet().toList();
             }
         }
-
         notifyListeners();
       });
       currentFiles = images;
       setLoading(false);
+      print('getImages completed');
       port.close();
       IsolateNameServer.removePortNameMapping('${isolateName}_2');
     });
@@ -123,21 +126,23 @@ class CategoryProvider extends ChangeNotifier {
   */
 
   static getAllFilesWithIsolate(Map<String, dynamic> context) async {
-    // print(context);
     String isolateName = context['name'];
-    // print('Get files');
     List<FileSystemEntity> files =
         await FileUtils.getAllFiles(showHidden: false);
-    // print('Files $files');
     final messenger = HandledIsolate.initialize(context);
     try {
       final SendPort? send =
           IsolateNameServer.lookupPortByName('${isolateName}_2');
-      send!.send(files);
+      // Convert the FileSystemEntity objects to their paths before sending
+      List<String> filePaths = files.map((file) => file.path).toList();
+      print('Found ${filePaths.length} files'); // Add this line
+      send!.send(filePaths);
+      // Wait for the send operation to complete before sending 'done'
+      await Future.delayed(Duration(seconds: 1));
+      messenger.send('done');
     } catch (e) {
-      // print(e);
+      print(e);
     }
-    messenger.send('done');
   }
 
   getAudios(String type) async {
@@ -150,6 +155,7 @@ class CategoryProvider extends ChangeNotifier {
       getAllFilesWithIsolate,
       name: isolateName,
       onReceive: (val) {
+        print('getAllFilesWithIsolate completed');
         // print(val);
         isolates.kill(isolateName);
       },
@@ -157,10 +163,15 @@ class CategoryProvider extends ChangeNotifier {
     );
     ReceivePort port = ReceivePort();
     IsolateNameServer.registerPortWithName(port.sendPort, '${isolateName}_2');
-    port.listen((files) async {
-      // print('RECEIVED SERVER PORT');
-      // print(files);
-      List tabs = await compute(separateAudios, {'files': files, 'type': type});
+    port.listen((filePaths) async {
+      if (filePaths.isEmpty) {
+        print('No file paths received');
+      } else {
+        print('Received file paths: ${filePaths.length}');
+      }
+      // List<File> files = filePaths.map((filePath) => File(filePath)).toList();
+      List tabs =
+          await compute(separateAudios, {'files': filePaths, 'type': type});
       audio = tabs[0];
       audioTabs = tabs[1];
       setLoading(false);
@@ -188,25 +199,36 @@ class CategoryProvider extends ChangeNotifier {
   }
 
   static Future<List> separateAudios(Map body) async {
-    List files = body['files'];
+    List<String> filePaths = body['files'];
     String type = body['type'];
     List<FileSystemEntity> audio = [];
     List<String> audioTabs = [];
-    for (File file in files) {
-      String mimeType = mime(file.path) ?? '';
-      // print(extension(file.path));
-      if (type == 'text' && docExtensions.contains(extension(file.path))) {
+
+    for (String filePath in filePaths) {
+      File file = File(filePath);
+      String fileType = getFileType(file.path);
+      if (fileType == type) {
         audio.add(file);
-      }
-      if (mimeType.isNotEmpty) {
-        if (mimeType.split('/')[0] == type) {
-          audio.add(file);
-          audioTabs.add(file.path.split('/')[file.path.split('/').length - 2]);
-          audioTabs = audioTabs.toSet().toList();
-        }
+        audioTabs.add(file.path.split('/')[file.path.split('/').length - 2]);
+        audioTabs = audioTabs.toSet().toList();
       }
     }
     return [audio, audioTabs];
+  }
+
+  static String getFileType(String filePath) {
+    String extension = path.extension(filePath).toLowerCase();
+    switch (extension) {
+      case '.pdf':
+      case '.doc':
+      case '.docx':
+      case '.json':
+        return 'text';
+      // Add more cases here for other file types
+      default:
+        String mimeType = mime(filePath) ?? '';
+        return mimeType.split('/')[0];
+    }
   }
 
   static List docExtensions = [
@@ -214,6 +236,7 @@ class CategoryProvider extends ChangeNotifier {
     '.epub',
     '.mobi',
     '.doc',
+    '.docx',
   ];
 
   void setLoading(value) {
