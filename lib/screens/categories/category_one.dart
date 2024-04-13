@@ -28,11 +28,11 @@ class _CategoryOneState extends State<CategoryOne> {
       switch (widget.title.toLowerCase()) {
         case 'images':
           Provider.of<CategoryProvider>(context, listen: false)
-              .getImages('image');
+              .getThumbnailFiles('image');
           break;
         case 'video':
           Provider.of<CategoryProvider>(context, listen: false)
-              .getImages('video');
+              .getThumbnailFiles('video');
           break;
       }
     });
@@ -47,7 +47,7 @@ class _CategoryOneState extends State<CategoryOne> {
           return const Scaffold(body: CustomLoader());
         }
         return DefaultTabController(
-          length: provider.imageTabs.length,
+          length: provider.thumbnailTabs.length,
           child: Scaffold(
             appBar: AppBar(
               title: Text(widget.title),
@@ -56,23 +56,23 @@ class _CategoryOneState extends State<CategoryOne> {
                 labelColor: Theme.of(context).colorScheme.secondary,
                 unselectedLabelColor:
                     Theme.of(context).textTheme.caption!.color,
-                isScrollable: provider.imageTabs.length < 3 ? false : true,
+                isScrollable: provider.thumbnailTabs.length < 3 ? false : true,
                 tabs: Constants.map<Widget>(
-                  provider.imageTabs,
+                  provider.thumbnailTabs,
                   (index, label) {
                     return Tab(text: '$label');
                   },
                 ),
                 onTap: (val) => provider.switchCurrentFiles(
-                    provider.images, provider.imageTabs[val]),
+                    provider.thumbnailFiles, provider.thumbnailTabs[val]),
               ),
             ),
             body: Visibility(
-              visible: provider.images.isNotEmpty,
+              visible: provider.thumbnailFiles.isNotEmpty,
               replacement: const Center(child: Text('No Files Found')),
               child: TabBarView(
                 children: Constants.map<Widget>(
-                  provider.imageTabs,
+                  provider.thumbnailTabs,
                   (index, label) {
                     List l = provider.currentFiles;
 
@@ -87,7 +87,7 @@ class _CategoryOneState extends State<CategoryOne> {
                             crossAxisCount: 2,
                             children: Constants.map(
                               index == 0
-                                  ? provider.images
+                                  ? provider.thumbnailFiles
                                   : l.reversed.toList(),
                               (index, item) {
                                 File file = File(item.path);
