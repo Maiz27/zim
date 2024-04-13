@@ -5,7 +5,6 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import '../utils/dialogs.dart';
 import '../utils/navigate.dart';
 import '../utils/theme_config.dart';
 import 'get_started.dart';

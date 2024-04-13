@@ -44,7 +44,7 @@ dependencies:
   fluttertoast: ^8.0.9
   permission_handler: ^10.2.0
   intl: ^0.17.0
-  open_file: ^3.2.1
+  open_file: ^3.3.2
   device_apps: ^2.2.0
   video_player: ^2.1.10
   isolate_handler: ^1.0.0
