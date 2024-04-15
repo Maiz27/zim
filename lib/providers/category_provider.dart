@@ -130,7 +130,7 @@ class CategoryProvider extends ChangeNotifier {
           IsolateNameServer.lookupPortByName('${isolateName}_2');
       // Convert the FileSystemEntity objects to their paths before sending
       List<String> filePaths = files.map((file) => file.path).toList();
-      print('Found ${filePaths.length} files'); // Add this line
+      print('Found ${filePaths.length} files');
       send!.send(filePaths);
       // Wait for the send operation to complete before sending 'done'
       await Future.delayed(Duration(seconds: 1));
