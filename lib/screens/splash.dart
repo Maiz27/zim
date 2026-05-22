@@ -20,7 +20,7 @@ class Splash extends StatefulWidget {
 }
 
 class _SplashState extends State<Splash> {
-  startTimeout() {
+  Timer startTimeout() {
     return Timer(const Duration(seconds: 2), handleTimeout);
   }
 
@@ -28,7 +28,7 @@ class _SplashState extends State<Splash> {
     changeScreen();
   }
 
-  changeScreen() async {
+  Future<void> changeScreen() async {
     PermissionStatus status = await Permission.storage.status;
     if (!status.isGranted) {
       requestPermission();
@@ -42,7 +42,7 @@ class _SplashState extends State<Splash> {
     }
   }
 
-  requestPermission() async {
+  Future<void> requestPermission() async {
     if (await Permission.manageExternalStorage.isDenied) {
       if (await Permission.manageExternalStorage
           .request()
@@ -71,38 +71,46 @@ class _SplashState extends State<Splash> {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
     startTimeout();
     SchedulerBinding.instance.addPostFrameCallback((_) {
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
-          overlays: SystemUiOverlay.values);
-      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-        statusBarColor: Theme.of(context).primaryColor,
-        systemNavigationBarColor: Colors.black,
-        statusBarIconBrightness:
-            Theme.of(context).primaryColor == ThemeConfig.darkTheme.primaryColor
-                ? Brightness.light
-                : Brightness.dark,
-      ));
+      SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.manual,
+        overlays: SystemUiOverlay.values,
+      );
+      SystemChrome.setSystemUIOverlayStyle(
+        SystemUiOverlayStyle(
+          statusBarColor: Theme.of(context).primaryColor,
+          systemNavigationBarColor: Colors.black,
+          statusBarIconBrightness:
+              Theme.of(context).primaryColor ==
+                  ThemeConfig.darkTheme.primaryColor
+              ? Brightness.light
+              : Brightness.dark,
+        ),
+      );
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Image(image: AssetImage('assets/imgs/logo/128px.png')),
-            const SizedBox(height: 5),
-            Text(
-              'Zim',
-              style: TextStyle(
-                color: Theme.of(context).primaryColor,
-                fontSize: 25.0,
-                fontWeight: FontWeight.bold,
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const Image(image: AssetImage('assets/imgs/logo/128px.png')),
+              const SizedBox(height: 5),
+              Text(
+                'Zim',
+                style: TextStyle(
+                  color: Theme.of(context).primaryColor,
+                  fontSize: 25.0,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
