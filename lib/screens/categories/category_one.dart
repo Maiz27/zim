@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:mime_type/mime_type.dart';
+import 'package:mime/mime.dart';
 import 'package:open_file/open_file.dart';
 import 'package:provider/provider.dart';
 
@@ -27,12 +27,16 @@ class _CategoryOneState extends State<CategoryOne> {
     SchedulerBinding.instance.addPostFrameCallback((_) {
       switch (widget.title.toLowerCase()) {
         case 'images':
-          Provider.of<CategoryProvider>(context, listen: false)
-              .getThumbnailFiles('image');
+          Provider.of<CategoryProvider>(
+            context,
+            listen: false,
+          ).getThumbnailFiles('image');
           break;
         case 'video':
-          Provider.of<CategoryProvider>(context, listen: false)
-              .getThumbnailFiles('video');
+          Provider.of<CategoryProvider>(
+            context,
+            listen: false,
+          ).getThumbnailFiles('video');
           break;
       }
     });
@@ -43,71 +47,78 @@ class _CategoryOneState extends State<CategoryOne> {
     return Consumer(
       builder:
           (BuildContext context, CategoryProvider provider, Widget? child) {
-        if (provider.loading) {
-          return const Scaffold(body: CustomLoader());
-        }
-        return DefaultTabController(
-          length: provider.thumbnailTabs.length,
-          child: Scaffold(
-            appBar: AppBar(
-              title: Text(widget.title),
-              bottom: TabBar(
-                indicatorColor: Theme.of(context).colorScheme.secondary,
-                labelColor: Theme.of(context).colorScheme.secondary,
-                unselectedLabelColor:
-                    Theme.of(context).textTheme.caption!.color,
-                isScrollable: provider.thumbnailTabs.length < 3 ? false : true,
-                tabs: Constants.map<Widget>(
-                  provider.thumbnailTabs,
-                  (index, label) {
-                    return Tab(text: '$label');
-                  },
+            if (provider.loading) {
+              return const Scaffold(body: CustomLoader());
+            }
+            return DefaultTabController(
+              length: provider.thumbnailTabs.length,
+              child: Scaffold(
+                appBar: AppBar(
+                  title: Text(widget.title),
+                  bottom: TabBar(
+                    indicatorColor: Theme.of(context).colorScheme.secondary,
+                    labelColor: Theme.of(context).colorScheme.secondary,
+                    unselectedLabelColor: Theme.of(
+                      context,
+                    ).textTheme.bodySmall!.color,
+                    isScrollable: provider.thumbnailTabs.length < 3
+                        ? false
+                        : true,
+                    tabs: Constants.map<Widget>(provider.thumbnailTabs, (
+                      index,
+                      label,
+                    ) {
+                      return Tab(text: '$label');
+                    }),
+                    onTap: (val) => provider.switchCurrentFiles(
+                      provider.thumbnailFiles,
+                      provider.thumbnailTabs[val],
+                    ),
+                  ),
                 ),
-                onTap: (val) => provider.switchCurrentFiles(
-                    provider.thumbnailFiles, provider.thumbnailTabs[val]),
-              ),
-            ),
-            body: Visibility(
-              visible: provider.thumbnailFiles.isNotEmpty,
-              replacement: const Center(child: Text('No Files Found')),
-              child: TabBarView(
-                children: Constants.map<Widget>(
-                  provider.thumbnailTabs,
-                  (index, label) {
-                    List l = provider.currentFiles;
+                body: Visibility(
+                  visible: provider.thumbnailFiles.isNotEmpty,
+                  replacement: const Center(child: Text('No Files Found')),
+                  child: TabBarView(
+                    children: Constants.map<Widget>(provider.thumbnailTabs, (
+                      index,
+                      label,
+                    ) {
+                      List l = provider.currentFiles;
 
-                    return CustomScrollView(
-                      primary: false,
-                      slivers: <Widget>[
-                        SliverPadding(
-                          padding: const EdgeInsets.all(10.0),
-                          sliver: SliverGrid.count(
-                            crossAxisSpacing: 5.0,
-                            mainAxisSpacing: 5.0,
-                            crossAxisCount: 2,
-                            children: Constants.map(
-                              index == 0
-                                  ? provider.thumbnailFiles
-                                  : l.reversed.toList(),
-                              (index, item) {
-                                File file = File(item.path);
-                                String path = file.path;
-                                String mimeType = mime(path) ?? '';
-                                return _MediaTile(
-                                    file: file, mimeType: mimeType);
-                              },
+                      return CustomScrollView(
+                        primary: false,
+                        slivers: <Widget>[
+                          SliverPadding(
+                            padding: const EdgeInsets.all(10.0),
+                            sliver: SliverGrid.count(
+                              crossAxisSpacing: 5.0,
+                              mainAxisSpacing: 5.0,
+                              crossAxisCount: 2,
+                              children: Constants.map(
+                                index == 0
+                                    ? provider.thumbnailFiles
+                                    : l.reversed.toList(),
+                                (index, item) {
+                                  File file = File(item.path);
+                                  String path = file.path;
+                                  String mimeType = lookupMimeType(path) ?? '';
+                                  return _MediaTile(
+                                    file: file,
+                                    mimeType: mimeType,
+                                  );
+                                },
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    );
-                  },
+                        ],
+                      );
+                    }),
+                  ),
                 ),
               ),
-            ),
-          ),
-        );
-      },
+            );
+          },
     );
   }
 }
@@ -142,13 +153,9 @@ class _MediaTile extends StatelessWidget {
                       children: <Widget>[
                         Text(
                           FileUtils.formatBytes(file.lengthSync(), 1),
-                          style: const TextStyle(
-                            fontSize: 12,
-                          ),
+                          style: const TextStyle(fontSize: 12),
                         ),
-                        const SizedBox(
-                          width: 5,
-                        ),
+                        const SizedBox(width: 5),
                         const Icon(
                           Icons.play_circle_filled,
                           color: Colors.white,
@@ -158,9 +165,7 @@ class _MediaTile extends StatelessWidget {
                     )
                   : Text(
                       FileUtils.formatBytes(file.lengthSync(), 1),
-                      style: const TextStyle(
-                        fontSize: 12,
-                      ),
+                      style: const TextStyle(fontSize: 12),
                     ),
             ),
           ),

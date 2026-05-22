@@ -24,36 +24,28 @@ class Constants {
       'icon': IconFontHelper.img,
       'path': '',
       'color': Colors.teal,
-      'screen': const CategoryOne(
-        title: 'Images',
-      ),
+      'screen': const CategoryOne(title: 'Images'),
     },
     {
       'title': 'Videos',
       'icon': IconFontHelper.video,
       'path': '',
       'color': Colors.red,
-      'screen': const CategoryOne(
-        title: 'Video',
-      ),
+      'screen': const CategoryOne(title: 'Video'),
     },
     {
       'title': 'Documents',
       'icon': IconFontHelper.document,
       'path': '',
       'color': Colors.blue,
-      'screen': const CategoryTwo(
-        title: 'Documents',
-      ),
+      'screen': const CategoryTwo(title: 'Documents'),
     },
     {
       'title': 'Audio',
       'icon': IconFontHelper.audio,
       'path': '',
       'color': Colors.pink,
-      'screen': const CategoryTwo(
-        title: 'Audio',
-      ),
+      'screen': const CategoryTwo(title: 'Audio'),
     },
     {
       'title': 'Apps',

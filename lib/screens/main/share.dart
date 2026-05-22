@@ -8,18 +8,9 @@ class Share extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: const Text(
-          'Share',
-        ),
-      ),
+      appBar: AppBar(centerTitle: true, title: const Text('Share')),
       drawer: const AppDrawer(),
-      body: const Center(
-        child: Text(
-          'Coming Soon!!!',
-        ),
-      ),
+      body: const Center(child: Text('Coming Soon!!!')),
     );
   }
 }

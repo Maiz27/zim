@@ -21,10 +21,7 @@ class _SettingsState extends State<Settings> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: const Text('Settings'),
-      ),
+      appBar: AppBar(centerTitle: true, title: const Text('Settings')),
       drawer: const AppDrawer(),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -32,58 +29,53 @@ class _SettingsState extends State<Settings> {
         children: [
           SwitchListTile.adaptive(
             contentPadding: const EdgeInsets.all(0),
-            secondary:
-                const IconFont(size: 25, iconName: IconFontHelper.hidden),
-            title: const Text(
-              'See hidden files',
+            secondary: const IconFont(
+              size: 25,
+              iconName: IconFontHelper.hidden,
             ),
+            title: const Text('See hidden files'),
             value: Provider.of<CategoryProvider>(context).showHidden,
             onChanged: (value) {
-              Provider.of<CategoryProvider>(context, listen: false)
-                  .setHidden(value);
+              Provider.of<CategoryProvider>(
+                context,
+                listen: false,
+              ).setHidden(value);
             },
-            activeColor: ThemeConfig.primary,
+            activeThumbColor: ThemeConfig.primary,
           ),
-          Container(
-            height: 1,
-            color: Theme.of(context).dividerColor,
-          ),
+          Container(height: 1, color: Theme.of(context).dividerColor),
           SwitchListTile.adaptive(
             contentPadding: const EdgeInsets.all(0),
             secondary: const IconFont(size: 25, iconName: IconFontHelper.moon),
             title: const Text('Dark mode'),
-            value: Provider.of<AppProvider>(context).theme ==
+            value:
+                Provider.of<AppProvider>(context).theme ==
                     ThemeConfig.lightTheme
                 ? false
                 : true,
             onChanged: (v) {
               if (v) {
-                Provider.of<AppProvider>(context, listen: false)
-                    .setTheme(ThemeConfig.darkTheme, 'dark');
+                Provider.of<AppProvider>(
+                  context,
+                  listen: false,
+                ).setTheme(ThemeConfig.darkTheme, 'dark');
               } else {
-                Provider.of<AppProvider>(context, listen: false)
-                    .setTheme(ThemeConfig.lightTheme, 'light');
+                Provider.of<AppProvider>(
+                  context,
+                  listen: false,
+                ).setTheme(ThemeConfig.lightTheme, 'light');
               }
             },
-            activeColor: ThemeConfig.primary,
+            activeThumbColor: ThemeConfig.primary,
           ),
-          Container(
-            height: 1,
-            color: Theme.of(context).dividerColor,
-          ),
+          Container(height: 1, color: Theme.of(context).dividerColor),
           ListTile(
             contentPadding: const EdgeInsets.all(0),
             onTap: () => Navigate.pushPage(context, const About()),
-            leading: const IconFont(
-              size: 25,
-              iconName: IconFontHelper.info,
-            ),
+            leading: const IconFont(size: 25, iconName: IconFontHelper.info),
             title: const Text('About'),
           ),
-          Container(
-            height: 1,
-            color: Theme.of(context).dividerColor,
-          ),
+          Container(height: 1, color: Theme.of(context).dividerColor),
         ],
       ),
     );

@@ -5,11 +5,7 @@ class FilePopup extends StatelessWidget {
   final String path;
   final Function popTap;
 
-  const FilePopup({
-    Key? key,
-    required this.path,
-    required this.popTap,
-  }) : super(key: key);
+  const FilePopup({super.key, required this.path, required this.popTap});
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +17,7 @@ class FilePopup extends StatelessWidget {
       '.7z',
       '.zlib',
       'bz2',
-      '.xz'
+      '.xz',
     ].contains(extension(path));
     return PopupMenuButton<int>(
       onSelected: (val) => popTap(val),
@@ -30,7 +26,7 @@ class FilePopup extends StatelessWidget {
           return [
             const PopupMenuItem(value: 0, child: Text('Rename')),
             const PopupMenuItem(value: 1, child: Text('Delete')),
-            const PopupMenuItem(value: 2, child: Text('Decompress'))
+            const PopupMenuItem(value: 2, child: Text('Decompress')),
           ];
         } else {
           return [
@@ -41,7 +37,7 @@ class FilePopup extends StatelessWidget {
       },
       icon: Icon(
         Icons.arrow_drop_down,
-        color: Theme.of(context).textTheme.headline6!.color,
+        color: Theme.of(context).textTheme.titleLarge!.color,
       ),
       // color: Theme.of(context).scaffoldBackgroundColor,
       offset: const Offset(0, 30),

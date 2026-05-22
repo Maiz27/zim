@@ -8,11 +8,11 @@ class PathBar extends StatelessWidget implements PreferredSizeWidget {
   final IconData? icon;
 
   const PathBar({
-    Key? key,
+    super.key,
     required this.paths,
     required this.onChanged,
     this.icon,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -61,10 +61,7 @@ class PathBar extends StatelessWidget implements PreferredSizeWidget {
             );
           },
           separatorBuilder: (BuildContext context, int index) {
-            return Icon(
-              Icons.chevron_right,
-              color: ThemeConfig.darkBg,
-            );
+            return Icon(Icons.chevron_right, color: ThemeConfig.darkBg);
           },
         ),
       ),

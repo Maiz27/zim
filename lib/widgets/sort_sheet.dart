@@ -21,35 +21,32 @@ class _SortSheetState extends State<SortSheet> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            const SizedBox(
-              height: 15,
-            ),
+            const SizedBox(height: 15),
             Text(
               'Sort by'.toUpperCase(),
-              style: const TextStyle(
-                fontSize: 12.0,
-              ),
+              style: const TextStyle(fontSize: 12.0),
             ),
-            const SizedBox(
-              height: 10,
-            ),
+            const SizedBox(height: 10),
             Flexible(
               child: ListView.builder(
                 itemCount: Constants.sortList.length,
                 itemBuilder: (BuildContext context, int index) {
                   return ListTile(
                     onTap: () async {
-                      await Provider.of<CategoryProvider>(context,
-                              listen: false)
-                          .setSort(index);
-                      if (!mounted) return;
-                      Navigator.pop(context);
+                      final navigator = Navigator.of(context);
+                      await Provider.of<CategoryProvider>(
+                        context,
+                        listen: false,
+                      ).setSort(index);
+                      navigator.pop();
                     },
                     contentPadding: const EdgeInsets.all(0),
-                    trailing: index ==
-                            Provider.of<CategoryProvider>(context,
-                                    listen: false)
-                                .sort
+                    trailing:
+                        index ==
+                            Provider.of<CategoryProvider>(
+                              context,
+                              listen: false,
+                            ).sort
                         ? Icon(
                             Icons.check,
                             color: Theme.of(context).primaryColor,
@@ -60,12 +57,14 @@ class _SortSheetState extends State<SortSheet> {
                       '${Constants.sortList[index]}',
                       style: TextStyle(
                         fontSize: 14.0,
-                        color: index ==
-                                Provider.of<CategoryProvider>(context,
-                                        listen: false)
-                                    .sort
+                        color:
+                            index ==
+                                Provider.of<CategoryProvider>(
+                                  context,
+                                  listen: false,
+                                ).sort
                             ? Theme.of(context).primaryColor
-                            : Theme.of(context).textTheme.headline6!.color,
+                            : Theme.of(context).textTheme.titleLarge!.color,
                       ),
                     ),
                   );

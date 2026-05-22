@@ -28,26 +28,27 @@ class _DownloadsState extends State<Downloads> {
     return Consumer(
       builder:
           (BuildContext context, CategoryProvider provider, Widget? child) {
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(widget.title),
-          ),
-          body: Visibility(
-            visible: provider.downloads.isNotEmpty,
-            replacement: const Center(child: Text('No Files Found')),
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              itemCount: provider.downloads.length,
-              itemBuilder: (BuildContext context, int index) {
-                return FileItem(file: provider.downloads[index]);
-              },
-              separatorBuilder: (BuildContext context, int index) {
-                return const CustomDivider();
-              },
-            ),
-          ),
-        );
-      },
+            return Scaffold(
+              appBar: AppBar(title: Text(widget.title)),
+              body: Visibility(
+                visible: provider.downloads.isNotEmpty,
+                replacement: const Center(child: Text('No Files Found')),
+                child: ListView.separated(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  itemCount: provider.downloads.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    return FileItem(file: provider.downloads[index]);
+                  },
+                  separatorBuilder: (BuildContext context, int index) {
+                    return const CustomDivider();
+                  },
+                ),
+              ),
+            );
+          },
     );
   }
 }

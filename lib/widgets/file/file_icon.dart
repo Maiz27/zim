@@ -3,7 +3,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:mime_type/mime_type.dart';
+import 'package:mime/mime.dart';
 import 'package:path/path.dart';
 import 'package:zim/widgets/icon_font.dart';
 
@@ -13,16 +13,13 @@ import '../video_thumbnail.dart';
 class FileIcon extends StatelessWidget {
   final FileSystemEntity file;
 
-  const FileIcon({
-    Key? key,
-    required this.file,
-  }) : super(key: key);
+  const FileIcon({super.key, required this.file});
 
   @override
   Widget build(BuildContext context) {
     File f = File(file.path);
     String _extension = extension(f.path).toLowerCase();
-    String mimeType = mime(basename(file.path).toLowerCase()) ?? '';
+    String mimeType = lookupMimeType(file.path) ?? '';
     String type = mimeType.isEmpty ? '' : mimeType.split('/')[0];
     if (_extension == '.apk') {
       return Padding(
@@ -71,17 +68,19 @@ class FileIcon extends StatelessWidget {
                   color: Colors.teal[700],
                 );
               },
-              image: ResizeImage(FileImage(File(file.path)),
-                  width: 50, height: 50),
+              image: ResizeImage(
+                FileImage(File(file.path)),
+                width: 50,
+                height: 50,
+              ),
             ),
           );
         case 'video':
           return SizedBox(
-              height: 40,
-              width: 40,
-              child: VideoThumbnail(
-                path: file.path,
-              ));
+            height: 40,
+            width: 40,
+            child: VideoThumbnail(path: file.path),
+          );
         case 'audio':
           return Padding(
             padding: const EdgeInsets.all(8.0),

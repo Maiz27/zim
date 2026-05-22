@@ -1,13 +1,9 @@
 import 'dart:io';
-import 'dart:isolate';
-import 'dart:ui';
-
-import 'package:path/path.dart';
 import 'package:flutter/foundation.dart';
-import 'package:mime_type/mime_type.dart';
-import 'package:zim/utils/file_utils.dart';
-import 'package:isolate_handler/isolate_handler.dart';
+import 'package:mime/mime.dart';
+import 'package:path/path.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:zim/utils/file_utils.dart';
 
 class CategoryProvider extends ChangeNotifier {
   CategoryProvider() {
@@ -29,23 +25,24 @@ class CategoryProvider extends ChangeNotifier {
 
   bool showHidden = false;
   int sort = 0;
-  final isolates = IsolateHandler();
-
-  getDownloads() async {
+  Future<void> getDownloads() async {
     await getFiles('downloads', downloads, downloadTabs, 'Download');
   }
 
-  getThumbnailFiles(String type) async {
+  Future<void> getThumbnailFiles(String type) async {
     await getFiles(type, thumbnailFiles, thumbnailTabs);
   }
 
-  getNonThumbnailFiles(String type) async {
+  Future<void> getNonThumbnailFiles(String type) async {
     await getFiles(type, nonThumbnailFiles, nonThumbnailTabs);
   }
 
   Future<void> getFiles(
-      String type, List<FileSystemEntity> files, List<String> tabs,
-      [String? dirName]) async {
+    String type,
+    List<FileSystemEntity> files,
+    List<String> tabs, [
+    String? dirName,
+  ]) async {
     setLoading(true);
     tabs.clear();
     files.clear();
@@ -54,8 +51,9 @@ class CategoryProvider extends ChangeNotifier {
       List<Directory> storages = await FileUtils.getStorageList();
       for (var dir in storages) {
         if (Directory('${dir.path}$dirName').existsSync()) {
-          List<FileSystemEntity> dirFiles =
-              Directory('${dir.path}$dirName').listSync();
+          List<FileSystemEntity> dirFiles = Directory(
+            '${dir.path}$dirName',
+          ).listSync();
           for (var file in dirFiles) {
             if (FileSystemEntity.isFileSync(file.path)) {
               files.add(file);
@@ -67,41 +65,38 @@ class CategoryProvider extends ChangeNotifier {
         }
       }
     } else {
-      String isolateName = type;
-      isolates.spawn<String>(
-        getAllFilesWithIsolate,
-        name: isolateName,
-        onReceive: (val) {
-          print('getAllFilesWithIsolate completed');
-          isolates.kill(isolateName);
-        },
-        onInitialized: () => isolates.send('hey', to: isolateName),
+      List<FileSystemEntity> allFiles = await FileUtils.getAllFiles(
+        showHidden: showHidden,
       );
-      ReceivePort port = ReceivePort();
-      IsolateNameServer.registerPortWithName(port.sendPort, '${isolateName}_2');
-      port.listen((filePaths) {
-        processFilePaths(filePaths, type, files, tabs);
-        currentFiles = files;
-        setLoading(false);
-        print('getFiles completed');
-        port.close();
-        IsolateNameServer.removePortNameMapping('${isolateName}_2');
-      });
+      processFilePaths(
+        allFiles.map((file) => file.path).toList(),
+        type,
+        files,
+        tabs,
+      );
+      currentFiles = files;
+      setLoading(false);
     }
   }
 
-  void processFilePaths(List<String> filePaths, String type,
-      List<FileSystemEntity> files, List<String> tabs) {
-    Set _tabs = tabs.toSet();
-    filePaths.forEach((filePath) {
+  void processFilePaths(
+    List<String> filePaths,
+    String type,
+    List<FileSystemEntity> files,
+    List<String> tabs,
+  ) {
+    Set<String> tabs0 = tabs.toSet();
+    for (var filePath in filePaths) {
       File file = File(filePath);
       if (shouldAddFile(file, type)) {
         files.add(file);
-        _tabs.add('${file.path.split('/')[file.path.split('/').length - 2]}');
+        tabs0.add(file.path.split('/')[file.path.split('/').length - 2]);
       }
       notifyListeners();
-    });
-    tabs = _tabs.toList() as List<String>;
+    }
+    tabs
+      ..clear()
+      ..addAll(tabs0);
   }
 
   bool shouldAddFile(File file, String type) {
@@ -109,38 +104,32 @@ class CategoryProvider extends ChangeNotifier {
       case 'application':
         return extension(file.path) == '.apk';
       case 'archive':
-        return ['.zip', '.rar', '.tar', '.gz', '.7z', '.zlib', 'bz2', '.xz']
-            .contains(extension(file.path));
+        return [
+          '.zip',
+          '.rar',
+          '.tar',
+          '.gz',
+          '.7z',
+          '.zlib',
+          'bz2',
+          '.xz',
+        ].contains(extension(file.path));
       case 'text':
-        return ['.pdf', '.epub', '.mobi', '.doc', '.docx', '.json']
-            .contains(extension(file.path));
+        return [
+          '.pdf',
+          '.epub',
+          '.mobi',
+          '.doc',
+          '.docx',
+          '.json',
+        ].contains(extension(file.path));
       default:
-        String mimeType = mime(file.path) ?? '';
+        String mimeType = lookupMimeType(file.path) ?? '';
         return mimeType.split('/')[0] == type;
     }
   }
 
-  static getAllFilesWithIsolate(Map<String, dynamic> context) async {
-    String isolateName = context['name'];
-    List<FileSystemEntity> files =
-        await FileUtils.getAllFiles(showHidden: false);
-    final messenger = HandledIsolate.initialize(context);
-    try {
-      final SendPort? send =
-          IsolateNameServer.lookupPortByName('${isolateName}_2');
-      // Convert the FileSystemEntity objects to their paths before sending
-      List<String> filePaths = files.map((file) => file.path).toList();
-      print('Found ${filePaths.length} files');
-      send!.send(filePaths);
-      // Wait for the send operation to complete before sending 'done'
-      await Future.delayed(Duration(seconds: 1));
-      messenger.send('done');
-    } catch (e) {
-      print(e);
-    }
-  }
-
-  switchCurrentFiles(List list, String label) async {
+  Future<void> switchCurrentFiles(List list, String label) async {
     List<FileSystemEntity> l = await compute(getTabImages, [list, label]);
     currentFiles = l;
     notifyListeners();
@@ -158,32 +147,32 @@ class CategoryProvider extends ChangeNotifier {
     return files;
   }
 
-  void setLoading(value) {
+  void setLoading(bool value) {
     loading = value;
     notifyListeners();
   }
 
-  setHidden(value) async {
+  Future<void> setHidden(bool value) async {
     SharedPreferences preference = await SharedPreferences.getInstance();
     await preference.setBool('hidden', value);
     showHidden = value;
     notifyListeners();
   }
 
-  getHidden() async {
+  Future<void> getHidden() async {
     SharedPreferences preference = await SharedPreferences.getInstance();
     bool h = preference.getBool('hidden') ?? false;
     setHidden(h);
   }
 
-  Future setSort(value) async {
+  Future<void> setSort(int value) async {
     SharedPreferences preference = await SharedPreferences.getInstance();
     await preference.setInt('sort', value);
     sort = value;
     notifyListeners();
   }
 
-  getSort() async {
+  Future<void> getSort() async {
     SharedPreferences preference = await SharedPreferences.getInstance();
     int h = preference.getInt('sort') ?? 0;
     setSort(h);

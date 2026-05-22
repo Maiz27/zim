@@ -11,10 +11,7 @@ class IosError extends StatelessWidget {
         child: Center(
           child: Text(
             'This app only works on Android. Please run on an android device!',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
             textAlign: TextAlign.center,
           ),
         ),

@@ -13,39 +13,43 @@ class AppProvider extends ChangeNotifier {
   Key key = UniqueKey();
   GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-  void setKey(value) {
+  void setKey(Key value) {
     key = value;
     notifyListeners();
   }
 
-  void setNavigatorKey(value) {
+  void setNavigatorKey(GlobalKey<NavigatorState> value) {
     navigatorKey = value;
     notifyListeners();
   }
 
-  void setTheme(value, c) {
+  void setTheme(ThemeData value, String c) {
     theme = value;
     SharedPreferences.getInstance().then((preference) {
       preference.setString('theme', c).then((val) {
-        SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
-            overlays: SystemUiOverlay.values);
-        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-          statusBarColor: ThemeConfig.primary,
-          statusBarIconBrightness: Brightness.light,
-        ));
+        SystemChrome.setEnabledSystemUIMode(
+          SystemUiMode.manual,
+          overlays: SystemUiOverlay.values,
+        );
+        SystemChrome.setSystemUIOverlayStyle(
+          SystemUiOverlayStyle(
+            statusBarColor: ThemeConfig.primary,
+            statusBarIconBrightness: Brightness.light,
+          ),
+        );
       });
     });
     notifyListeners();
   }
 
-  ThemeData getTheme(value) {
+  ThemeData getTheme(String value) {
     return theme;
   }
 
   Future<ThemeData> checkTheme() async {
     SharedPreferences preference = await SharedPreferences.getInstance();
     ThemeData t;
-    String? r = preference.getString('theme') ?? 'light';
+    String r = preference.getString('theme') ?? 'light';
 
     if (r == 'light') {
       t = ThemeConfig.lightTheme;

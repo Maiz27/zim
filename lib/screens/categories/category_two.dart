@@ -26,12 +26,16 @@ class _CategoryTwoState extends State<CategoryTwo> {
     SchedulerBinding.instance.addPostFrameCallback((_) {
       switch (widget.title.toLowerCase()) {
         case 'audio':
-          Provider.of<CategoryProvider>(context, listen: false)
-              .getNonThumbnailFiles('audio');
+          Provider.of<CategoryProvider>(
+            context,
+            listen: false,
+          ).getNonThumbnailFiles('audio');
           break;
         case 'documents':
-          Provider.of<CategoryProvider>(context, listen: false)
-              .getNonThumbnailFiles('text');
+          Provider.of<CategoryProvider>(
+            context,
+            listen: false,
+          ).getNonThumbnailFiles('text');
           break;
       }
     });
@@ -40,8 +44,7 @@ class _CategoryTwoState extends State<CategoryTwo> {
   @override
   Widget build(BuildContext context) {
     return Consumer(
-      builder:
-          (BuildContext context, CategoryProvider provider, Widget? child) {
+      builder: (BuildContext context, CategoryProvider provider, Widget? child) {
         return provider.loading
             ? const Scaffold(body: CustomLoader())
             : DefaultTabController(
@@ -52,17 +55,19 @@ class _CategoryTwoState extends State<CategoryTwo> {
                     bottom: TabBar(
                       indicatorColor: Theme.of(context).colorScheme.secondary,
                       labelColor: Theme.of(context).colorScheme.secondary,
-                      unselectedLabelColor:
-                          Theme.of(context).textTheme.caption!.color,
-                      isScrollable:
-                          provider.nonThumbnailTabs.length < 3 ? false : true,
-                      tabs: Constants.map<Widget>(
-                        provider.nonThumbnailTabs,
-                        (index, label) {
-                          // print('tabs');
-                          return Tab(text: '$label');
-                        },
-                      ),
+                      unselectedLabelColor: Theme.of(
+                        context,
+                      ).textTheme.bodySmall!.color,
+                      isScrollable: provider.nonThumbnailTabs.length < 3
+                          ? false
+                          : true,
+                      tabs: Constants.map<Widget>(provider.nonThumbnailTabs, (
+                        index,
+                        label,
+                      ) {
+                        // print('tabs');
+                        return Tab(text: '$label');
+                      }),
                     ),
                   ),
                   body: provider.nonThumbnailFiles.isEmpty
@@ -89,15 +94,15 @@ class _CategoryTwoState extends State<CategoryTwo> {
                                     : list.length,
                                 itemBuilder:
                                     (BuildContext context, int index2) {
-                                  FileSystemEntity file = index == 0
-                                      ? provider.nonThumbnailFiles[index2]
-                                      : list[index2];
-                                  return FileItem(file: file);
-                                },
+                                      FileSystemEntity file = index == 0
+                                          ? provider.nonThumbnailFiles[index2]
+                                          : list[index2];
+                                      return FileItem(file: file);
+                                    },
                                 separatorBuilder:
                                     (BuildContext context, int index) {
-                                  return const CustomDivider();
-                                },
+                                      return const CustomDivider();
+                                    },
                               );
                             },
                           ),

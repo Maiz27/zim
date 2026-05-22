@@ -13,10 +13,7 @@ import 'folder.dart';
 class Search extends SearchDelegate {
   final ThemeData themeData;
 
-  Search({
-    Key? key,
-    required this.themeData,
-  });
+  Search({Key? key, required this.themeData});
 
   @override
   ThemeData appBarTheme(BuildContext context) {
@@ -24,10 +21,10 @@ class Search extends SearchDelegate {
     return theme.copyWith(
       primaryTextTheme: Theme.of(context).primaryTextTheme,
       textTheme: Theme.of(context).textTheme.copyWith(
-            headline1: Theme.of(context).textTheme.headline1!.copyWith(
-                  color: Theme.of(context).primaryTextTheme.headline6!.color,
-                ),
-          ),
+        displayLarge: Theme.of(context).textTheme.displayLarge!.copyWith(
+          color: Theme.of(context).primaryTextTheme.titleLarge!.color,
+        ),
+      ),
       // inputDecorationTheme: InputDecorationTheme(
       //   hintStyle: TextStyle(
       //     color: theme.primaryTextTheme.headline6!.color,
@@ -61,9 +58,13 @@ class Search extends SearchDelegate {
   @override
   Widget buildResults(BuildContext context) {
     return FutureBuilder<List<FileSystemEntity>>(
-      future: FileUtils.searchFiles(query,
-          showHidden:
-              Provider.of<CategoryProvider>(context, listen: false).showHidden),
+      future: FileUtils.searchFiles(
+        query,
+        showHidden: Provider.of<CategoryProvider>(
+          context,
+          listen: false,
+        ).showHidden,
+      ),
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         if (snapshot.hasData) {
           if (snapshot.data.isEmpty) {

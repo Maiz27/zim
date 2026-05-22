@@ -12,8 +12,7 @@ import 'screens/ios_error.dart';
 import 'screens/splash.dart';
 import 'utils/theme_config.dart';
 
-// ignore: prefer_typing_uninitialized_variables
-var isFirst;
+bool? isFirst;
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -29,20 +28,25 @@ class _MyAppState extends State<MyApp> {
     isFirstLaunch();
     SchedulerBinding.instance.addPostFrameCallback((_) {
       Provider.of<CoreProvider>(context, listen: false).checkSpace();
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
-          overlays: SystemUiOverlay.values);
-      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-        statusBarColor: Theme.of(context).primaryColor,
-        systemNavigationBarColor: Colors.black,
-        statusBarIconBrightness:
-            Theme.of(context).primaryColor == ThemeConfig.darkTheme.primaryColor
-                ? Brightness.light
-                : Brightness.dark,
-      ));
+      SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.manual,
+        overlays: SystemUiOverlay.values,
+      );
+      SystemChrome.setSystemUIOverlayStyle(
+        SystemUiOverlayStyle(
+          statusBarColor: Theme.of(context).primaryColor,
+          systemNavigationBarColor: Colors.black,
+          statusBarIconBrightness:
+              Theme.of(context).primaryColor ==
+                  ThemeConfig.darkTheme.primaryColor
+              ? Brightness.light
+              : Brightness.dark,
+        ),
+      );
     });
   }
 
-  isFirstLaunch() async {
+  Future<void> isFirstLaunch() async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
     var first = preferences.getBool('first_time');
     isFirst = first;
@@ -65,9 +69,7 @@ class _MyAppState extends State<MyApp> {
           // home: const GetStarted(),
           home: Platform.isIOS
               ? const IosError()
-              : Splash(
-                  first: isFirst ?? true,
-                ),
+              : Splash(first: isFirst ?? true),
         );
       },
     );

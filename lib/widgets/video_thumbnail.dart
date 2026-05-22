@@ -29,7 +29,6 @@ class _VideoThumbnailState extends State<VideoThumbnail>
   //       }
   //     });
   // }
-
   @override
   Widget build(BuildContext context) {
     super.build(context);

@@ -11,24 +11,24 @@ class ThemeConfig {
 
   static ThemeData lightTheme = ThemeData(
     brightness: Brightness.light,
-    backgroundColor: darkBg,
     primaryColor: primary,
     scaffoldBackgroundColor: lightBg,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: primary,
+      brightness: Brightness.light,
+    ).copyWith(primary: primary, secondary: accent, surface: darkBg),
     appBarTheme: AppBarTheme(
       elevation: 4,
-      color: primary,
+      backgroundColor: primary,
       titleTextStyle: TextStyle(
         color: lightBg,
         fontSize: 20,
         fontWeight: FontWeight.w800,
       ),
     ),
-    drawerTheme: DrawerThemeData(
-      backgroundColor: lightBg,
-      elevation: 2,
-    ),
+    drawerTheme: DrawerThemeData(backgroundColor: lightBg, elevation: 2),
     progressIndicatorTheme: ProgressIndicatorThemeData(
-      circularTrackColor: darkBg.withOpacity(0.1),
+      circularTrackColor: darkBg.withValues(alpha: 0.1),
       color: primary,
     ),
     popupMenuTheme: PopupMenuThemeData(
@@ -38,9 +38,7 @@ class ThemeConfig {
     inputDecorationTheme: InputDecorationTheme(
       focusColor: primary,
       focusedBorder: UnderlineInputBorder(
-        borderSide: BorderSide(
-          color: primary,
-        ),
+        borderSide: BorderSide(color: primary),
       ),
     ),
     textSelectionTheme: TextSelectionThemeData(
@@ -50,24 +48,24 @@ class ThemeConfig {
 
   static ThemeData darkTheme = ThemeData(
     brightness: Brightness.dark,
-    backgroundColor: lightBg,
     primaryColor: primary,
     scaffoldBackgroundColor: darkBg,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: primary,
+      brightness: Brightness.dark,
+    ).copyWith(primary: primary, secondary: accent, surface: lightBg),
     appBarTheme: AppBarTheme(
       elevation: 4,
-      color: primary,
+      backgroundColor: primary,
       titleTextStyle: const TextStyle(
         color: Colors.white,
         fontSize: 20,
         fontWeight: FontWeight.w800,
       ),
     ),
-    drawerTheme: DrawerThemeData(
-      backgroundColor: darkBg,
-      elevation: 2,
-    ),
+    drawerTheme: DrawerThemeData(backgroundColor: darkBg, elevation: 2),
     progressIndicatorTheme: ProgressIndicatorThemeData(
-      circularTrackColor: lightBg.withOpacity(0.8),
+      circularTrackColor: lightBg.withValues(alpha: 0.8),
       color: primary,
     ),
     popupMenuTheme: PopupMenuThemeData(
@@ -77,9 +75,7 @@ class ThemeConfig {
     inputDecorationTheme: InputDecorationTheme(
       focusColor: primary,
       focusedBorder: UnderlineInputBorder(
-        borderSide: BorderSide(
-          color: primary,
-        ),
+        borderSide: BorderSide(color: primary),
       ),
     ),
     textSelectionTheme: TextSelectionThemeData(

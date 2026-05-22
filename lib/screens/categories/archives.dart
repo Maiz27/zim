@@ -19,8 +19,10 @@ class _ArchivesState extends State<Archives> {
   void initState() {
     super.initState();
     SchedulerBinding.instance.addPostFrameCallback((_) {
-      Provider.of<CategoryProvider>(context, listen: false)
-          .getThumbnailFiles('archive');
+      Provider.of<CategoryProvider>(
+        context,
+        listen: false,
+      ).getThumbnailFiles('archive');
     });
   }
 
@@ -29,26 +31,27 @@ class _ArchivesState extends State<Archives> {
     return Consumer(
       builder:
           (BuildContext context, CategoryProvider provider, Widget? child) {
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(widget.title),
-          ),
-          body: Visibility(
-            visible: provider.currentFiles.isNotEmpty,
-            replacement: const Center(child: Text('No Files Found')),
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              itemCount: provider.currentFiles.length,
-              itemBuilder: (BuildContext context, int index) {
-                return FileItem(file: provider.currentFiles[index]);
-              },
-              separatorBuilder: (BuildContext context, int index) {
-                return const CustomDivider();
-              },
-            ),
-          ),
-        );
-      },
+            return Scaffold(
+              appBar: AppBar(title: Text(widget.title)),
+              body: Visibility(
+                visible: provider.currentFiles.isNotEmpty,
+                replacement: const Center(child: Text('No Files Found')),
+                child: ListView.separated(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  itemCount: provider.currentFiles.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    return FileItem(file: provider.currentFiles[index]);
+                  },
+                  separatorBuilder: (BuildContext context, int index) {
+                    return const CustomDivider();
+                  },
+                ),
+              ),
+            );
+          },
     );
   }
 }
