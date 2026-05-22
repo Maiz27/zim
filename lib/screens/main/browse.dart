@@ -15,7 +15,7 @@ class Browse extends StatefulWidget {
 }
 
 class _BrowseState extends State<Browse> {
-  refresh(BuildContext context) async {
+  Future<void> refresh(BuildContext context) async {
     await Provider.of<CoreProvider>(context, listen: false).checkSpace();
   }
 
@@ -24,10 +24,7 @@ class _BrowseState extends State<Browse> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: const Text(
-          'Zim',
-          style: TextStyle(fontSize: 25.0),
-        ),
+        title: const Text('Zim', style: TextStyle(fontSize: 25.0)),
         actions: [
           IconButton(
             tooltip: 'Search',
@@ -38,24 +35,27 @@ class _BrowseState extends State<Browse> {
               );
             },
             icon: const Icon(Icons.search),
-          )
+          ),
         ],
       ),
       drawer: const AppDrawer(),
       body: RefreshIndicator(
         onRefresh: () => refresh(context),
-        child: Column(
-          // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: const [
-            StorageSection(),
-            CategorySection(),
-          ],
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.only(bottom: 24),
+            child: Column(
+              children: const [StorageSection(), CategorySection()],
+            ),
+          ),
         ),
       ),
     );
   }
 
-  calculatePercent(int usedSpace, int totalSpace) {
+  double calculatePercent(int usedSpace, int totalSpace) {
     return double.parse((usedSpace / totalSpace * 100).toStringAsFixed(1));
   }
 }
