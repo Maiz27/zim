@@ -21,11 +21,7 @@ class Folder extends StatefulWidget {
   final String title;
   final String path;
 
-  const Folder({
-    Key? key,
-    required this.title,
-    required this.path,
-  }) : super(key: key);
+  const Folder({super.key, required this.title, required this.path});
 
   @override
   // ignore: library_private_types_in_public_api
@@ -46,7 +42,7 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
     }
   }
 
-  getFiles() async {
+  Future<void> getFiles() async {
     try {
       var provider = Provider.of<CategoryProvider>(context, listen: false);
       Directory dir = Directory(path);
@@ -90,7 +86,7 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
   }
 
-  navigateBack() {
+  void navigateBack() {
     paths.removeLast();
     path = paths.last;
     setState(() {});
@@ -99,17 +95,16 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        if (paths.length == 1) {
-          return true;
-        } else {
+    return PopScope(
+      canPop: paths.length == 1,
+      onPopInvokedWithResult: (bool didPop, Object? result) {
+        if (didPop) return;
+        if (paths.length > 1) {
           paths.removeLast();
           setState(() {
             path = paths.last;
           });
           getFiles();
-          return false;
         }
       },
       child: Scaffold(
@@ -126,12 +121,19 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
           ),
           elevation: 4,
           title: Column(
+            mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(widget.title),
+              Text(
+                widget.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
               Text(
                 path,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w400,
@@ -170,8 +172,12 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
           replacement: const Center(child: Text('There\'s nothing here')),
           visible: files.isNotEmpty,
           child: ListView.separated(
-            padding:
-                const EdgeInsets.only(top: 10, bottom: 80, left: 10, right: 10),
+            padding: const EdgeInsets.only(
+              top: 10,
+              bottom: 80,
+              left: 10,
+              right: 10,
+            ),
             itemCount: files.length,
             itemBuilder: (BuildContext context, int index) {
               FileSystemEntity file = files[index];
@@ -224,7 +230,7 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
     );
   }
 
-  deleteFile(bool directory, var file) async {
+  Future<void> deleteFile(bool directory, var file) async {
     try {
       if (directory) {
         await Directory(file.path).delete(recursive: true);
@@ -241,7 +247,7 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
     getFiles();
   }
 
-  addDialog(BuildContext context, String path) async {
+  Future<void> addDialog(BuildContext context, String path) async {
     await showDialog(
       context: context,
       builder: (context) => AddFileDialog(path: path),
@@ -249,7 +255,11 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
     getFiles();
   }
 
-  renameDialog(BuildContext context, String path, String type) async {
+  Future<void> renameDialog(
+    BuildContext context,
+    String path,
+    String type,
+  ) async {
     await showDialog(
       context: context,
       builder: (context) => RenameFileDialog(path: path, type: type),
@@ -257,13 +267,14 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
     getFiles();
   }
 
-  decompressDialog(BuildContext context, String path, String parent) async {
+  Future<void> decompressDialog(
+    BuildContext context,
+    String path,
+    String parent,
+  ) async {
     await showDialog(
       context: context,
-      builder: (context) => DecompressArchiveDialog(
-        path: path,
-        parent: parent,
-      ),
+      builder: (context) => DecompressArchiveDialog(path: path, parent: parent),
     );
     getFiles();
   }
