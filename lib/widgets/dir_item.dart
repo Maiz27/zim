@@ -11,39 +11,31 @@ class DirectoryItem extends StatelessWidget {
   final Function? popTap;
 
   const DirectoryItem({
-    Key? key,
+    super.key,
     required this.file,
     required this.tap,
     this.popTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
       onTap: () => tap(),
-      contentPadding: const EdgeInsets.all(0),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
       leading: const SizedBox(
         height: 40,
         width: 40,
-        child: Center(
-          child: Icon(
-            Icons.folder,
-          ),
-        ),
+        child: Center(child: Icon(Icons.folder)),
       ),
       title: Text(
         basename(file.path),
-        style: const TextStyle(
-          fontSize: 14,
-        ),
+        style: const TextStyle(fontSize: 14),
         maxLines: 2,
+        overflow: TextOverflow.ellipsis,
       ),
       trailing: popTap == null
           ? null
-          : DirPopup(
-              path: file.path,
-              popTap: popTap,
-            ),
+          : DirPopup(path: file.path, popTap: popTap),
     );
   }
 }
