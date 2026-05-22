@@ -6,6 +6,7 @@ import 'package:zim/utils/theme_config.dart';
 
 import '../../utils/dialogs.dart';
 import '../custom_alert.dart';
+import 'dialog_actions.dart';
 
 class RenameFileDialog extends StatefulWidget {
   final String path;
@@ -27,128 +28,75 @@ class _RenameFileDialogState extends State<RenameFileDialog> {
   }
 
   @override
+  void dispose() {
+    name.dispose();
+    super.dispose();
+  }
+
+  String _replaceBasename(String newName) {
+    final dirname = path_lib.dirname(widget.path);
+    return path_lib.join(dirname, newName);
+  }
+
+  Future<void> _submit() async {
+    if (name.text.isEmpty) return;
+    final newPath = _replaceBasename(name.text);
+    final exists = widget.type == 'file'
+        ? File(newPath).existsSync()
+        : Directory(newPath).existsSync();
+    if (exists) {
+      Dialogs.showToast(
+        widget.type == 'file'
+            ? 'A File with that name already exists!'
+            : 'A Folder with that name already exists!',
+      );
+    } else {
+      try {
+        if (widget.type == 'file') {
+          await File(widget.path).rename(newPath);
+        } else {
+          await Directory(widget.path).rename(newPath);
+        }
+      } catch (e) {
+        if (e.toString().contains('Permission denied')) {
+          Dialogs.showToast('Cannot write to this device!');
+        }
+      }
+    }
+    if (!mounted) return;
+    Navigator.pop(context);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return CustomAlert(
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const SizedBox(height: 15),
+            const SizedBox(height: 8),
             const Text(
               'Rename Item',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+              textAlign: TextAlign.center,
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
-            const SizedBox(height: 25),
+            const SizedBox(height: 20),
             TextField(
               controller: name,
               keyboardType: TextInputType.text,
+              autofocus: true,
+              cursorColor: ThemeConfig.primary,
             ),
-            const SizedBox(height: 40),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                SizedBox(
-                  height: 40,
-                  width: 130,
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ButtonStyle(
-                      backgroundColor:
-                          MaterialStateProperty.all<Color>(Colors.white),
-                      shape: MaterialStateProperty.all(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(5.0),
-                        ),
-                      ),
-                      side: MaterialStateProperty.all(
-                        BorderSide(
-                          color: ThemeConfig.darkBg,
-                        ),
-                      ),
-                    ),
-                    child: Text(
-                      'Cancel',
-                      style: TextStyle(
-                        color: ThemeConfig.darkBg,
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  height: 40,
-                  width: 130,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      if (name.text.isNotEmpty) {
-                        if (widget.type == 'file') {
-                          if (!File(widget.path.replaceAll(
-                                      path_lib.basename(widget.path), '') +
-                                  name.text)
-                              .existsSync()) {
-                            await File(widget.path)
-                                .rename(widget.path.replaceAll(
-                                        path_lib.basename(widget.path), '') +
-                                    name.text)
-                                .catchError((e) {
-                              // print(e.toString());
-                              if (e.toString().contains('Permission denied')) {
-                                Dialogs.showToast(
-                                    'Cannot write to this device!');
-                              }
-                            });
-                          } else {
-                            Dialogs.showToast(
-                                'A File with that name already exists!');
-                          }
-                        } else {
-                          if (Directory(widget.path.replaceAll(
-                                      path_lib.basename(widget.path), '') +
-                                  name.text)
-                              .existsSync()) {
-                            Dialogs.showToast(
-                                'A Folder with that name already exists!');
-                          } else {
-                            await Directory(widget.path)
-                                .rename(widget.path.replaceAll(
-                                        path_lib.basename(widget.path), '') +
-                                    name.text)
-                                .catchError((e) {
-                              // print(e.toString());
-                              if (e.toString().contains('Permission denied')) {
-                                Dialogs.showToast(
-                                    'Cannot write to this device!');
-                              }
-                            });
-                          }
-                        }
-                        if (!mounted) return;
-                        Navigator.pop(context);
-                      }
-                    },
-                    style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all<Color>(
-                          Theme.of(context).primaryColor),
-                      shape: MaterialStateProperty.all(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(5.0),
-                        ),
-                      ),
-                    ),
-                    child: Text(
-                      'Rename',
-                      style: TextStyle(color: ThemeConfig.darkBg),
-                    ),
-                  ),
-                ),
-              ],
+            const SizedBox(height: 32),
+            DialogActions(
+              confirmLabel: 'Rename',
+              onCancel: () => Navigator.pop(context),
+              onConfirm: _submit,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 8),
           ],
         ),
       ),

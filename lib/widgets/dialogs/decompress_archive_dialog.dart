@@ -8,12 +8,16 @@ import 'package:zim/widgets/icon_font.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/theme_config.dart';
 import '../custom_alert.dart';
+import 'dialog_actions.dart';
 
 class DecompressArchiveDialog extends StatefulWidget {
   final String path;
   final String parent;
-  const DecompressArchiveDialog(
-      {super.key, required this.path, required this.parent});
+  const DecompressArchiveDialog({
+    super.key,
+    required this.path,
+    required this.parent,
+  });
 
   @override
   State<DecompressArchiveDialog> createState() =>
@@ -25,25 +29,57 @@ class _DecompressArchiveDialogState extends State<DecompressArchiveDialog> {
   bool loading = FileUtils.decompressing;
 
   @override
-  Widget build(BuildContext context) {
+  void initState() {
+    super.initState();
     outputDir.text = widget.parent;
+  }
+
+  @override
+  void dispose() {
+    outputDir.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (loading) return;
+    setState(() => loading = true);
+    if (!Directory(outputDir.text).existsSync()) {
+      try {
+        await Directory(outputDir.text).create(recursive: true);
+      } catch (e) {
+        if (e.toString().contains('Permission denied')) {
+          Dialogs.showToast('Cannot write to this Storage device!');
+        }
+      }
+    }
+    final success =
+        await FileUtils.extractArchive(widget.path, outputDir.text);
+    if (!mounted) return;
+    if (success) {
+      Navigator.pop(context);
+      Dialogs.showToast('Archive decompressed Successfully');
+    } else {
+      setState(() => loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return CustomAlert(
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(height: 15),
+            const SizedBox(height: 8),
             const Text(
               'Decompress Archive',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+              textAlign: TextAlign.center,
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
-            const SizedBox(height: 25),
+            const SizedBox(height: 20),
             IconFont(
               iconName: IconFontHelper.archive,
               color: Colors.purple[700],
@@ -53,107 +89,38 @@ class _DecompressArchiveDialogState extends State<DecompressArchiveDialog> {
             Text(
               widget.path.split('/').last,
               softWrap: true,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 letterSpacing: 2,
               ),
             ),
-            // ,
-            const SizedBox(height: 25),
+            const SizedBox(height: 24),
             const Text(
               'Output Directory:',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             TextField(
               controller: outputDir,
               keyboardType: TextInputType.text,
               cursorColor: ThemeConfig.primary,
             ),
-            const SizedBox(height: 20),
-            loading ? const CircularProgressIndicator() : const SizedBox(),
-            const SizedBox(height: 20),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                SizedBox(
-                  height: 40,
-                  width: 130,
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ButtonStyle(
-                      backgroundColor:
-                          MaterialStateProperty.all<Color>(Colors.white),
-                      shape: MaterialStateProperty.all(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(5.0),
-                        ),
-                      ),
-                      side: MaterialStateProperty.all(
-                        BorderSide(
-                          color: ThemeConfig.darkBg,
-                        ),
-                      ),
-                    ),
-                    child: Text(
-                      'Cancel',
-                      style: TextStyle(
-                        color: ThemeConfig.darkBg,
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  height: 40,
-                  width: 130,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      if (!loading) {
-                        loading = true;
-                        setState(() {});
-                        if (!Directory(outputDir.text).existsSync()) {
-                          await Directory(outputDir.text)
-                              .create()
-                              .catchError((e) {
-                            if (e.toString().contains('Permission denied')) {
-                              Dialogs.showToast(
-                                  'Cannot write to this Storage  device!');
-                            }
-                          });
-                        }
-                        await FileUtils.extractArchive(
-                                widget.path, outputDir.text)
-                            .then((value) => {
-                                  if (value == true)
-                                    {
-                                      Navigator.pop(context),
-                                      Dialogs.showToast(
-                                          'Archive decompressed Successfully'),
-                                    }
-                                });
-                      }
-                    },
-                    style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all<Color>(
-                          Theme.of(context).primaryColor),
-                      shape: MaterialStateProperty.all(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(5.0),
-                        ),
-                      ),
-                    ),
-                    child: Text(
-                      'Decompress',
-                      style: TextStyle(color: ThemeConfig.darkBg),
-                    ),
-                  ),
-                ),
-              ],
+            const SizedBox(height: 16),
+            if (loading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            const SizedBox(height: 8),
+            DialogActions(
+              confirmLabel: 'Decompress',
+              confirmEnabled: !loading,
+              onCancel: () => Navigator.pop(context),
+              onConfirm: _submit,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 8),
           ],
         ),
       ),
