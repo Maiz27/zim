@@ -8,37 +8,33 @@ class CategorySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var deviceHeight = MediaQuery.of(context).size.height;
-    var deviceWidth = MediaQuery.of(context).size.width;
-    return Center(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       child: Container(
-        height: deviceHeight * 0.3,
-        width: deviceWidth * 0.9,
-        margin: const EdgeInsets.only(top: 20),
         decoration: BoxDecoration(
-          color: Theme.of(context).backgroundColor.withOpacity(0.1),
-          borderRadius: const BorderRadius.all(
-            Radius.circular(40),
-          ),
+          color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.1),
+          borderRadius: const BorderRadius.all(Radius.circular(40)),
         ),
-        child: GridView.count(
-          crossAxisCount: 4,
-          padding: const EdgeInsets.symmetric(
-            vertical: 10,
-            horizontal: 20,
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        child: GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: Constants.categories.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 4,
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+            childAspectRatio: 0.85,
           ),
-          mainAxisSpacing: 10,
-          crossAxisSpacing: 10,
-          childAspectRatio: 7 / 10,
-          children: List.generate(
-            Constants.categories.length,
-            (index) => CategoryItem(
-              title: Constants.categories[index]['title'],
-              color: Constants.categories[index]['color'],
-              icon: Constants.categories[index]['icon'],
-              screen: Constants.categories[index]['screen'],
-            ),
-          ),
+          itemBuilder: (context, index) {
+            final category = Constants.categories[index];
+            return CategoryItem(
+              title: category['title'],
+              color: category['color'],
+              icon: category['icon'],
+              screen: category['screen'],
+            );
+          },
         ),
       ),
     );

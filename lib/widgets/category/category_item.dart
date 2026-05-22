@@ -10,46 +10,50 @@ class CategoryItem extends StatelessWidget {
   final Widget screen;
 
   const CategoryItem({
-    Key? key,
+    super.key,
     required this.title,
     required this.icon,
     required this.color,
     required this.screen,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    var deviceHeight = MediaQuery.of(context).size.height;
-    // var deviceWidth = MediaQuery.of(context).size.width;
     return InkWell(
       onTap: () {
         Navigate.pushPage(context, screen);
       },
+      borderRadius: const BorderRadius.all(Radius.circular(15)),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            height: deviceHeight * 0.08,
-            decoration: BoxDecoration(
-              color: color[200],
-              borderRadius: const BorderRadius.all(
-                Radius.circular(15),
-              ),
-            ),
-            child: Center(
-              child: IconFont(
-                iconName: icon,
-                size: 30,
-                color: color[700],
+          Expanded(
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: color[200],
+                  borderRadius: const BorderRadius.all(Radius.circular(15)),
+                ),
+                child: Center(
+                  child: IconFont(iconName: icon, size: 26, color: color[700]),
+                ),
               ),
             ),
           ),
-          Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
+          const SizedBox(height: 6),
+          Flexible(
+            child: Text(
+              title,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
             ),
-          )
+          ),
         ],
       ),
     );
