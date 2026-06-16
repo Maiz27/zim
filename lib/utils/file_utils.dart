@@ -14,6 +14,39 @@ class FileUtils {
   static String waPath = '/storage/emulated/0/WhatsApp/Media/.Statuses';
   static bool decompressing = false;
 
+  /// Extensions treated as archives for icons, the Archives category and the
+  /// file listing. Broad: includes formats we recognise but cannot extract.
+  static const List<String> archiveExtensions = [
+    '.zip',
+    '.rar',
+    '.tar',
+    '.gz',
+    '.7z',
+    '.zlib',
+    '.bz2',
+    '.xz',
+  ];
+
+  /// Archives the bundled `archive` package can actually extract. Narrower than
+  /// [archiveExtensions] (no `.rar` / `.7z`), so the Decompress action is only
+  /// offered when it can really succeed.
+  static const List<String> extractableArchiveExtensions = [
+    '.zip',
+    '.tar',
+    '.gz',
+    '.zlib',
+    '.bz2',
+    '.xz',
+  ];
+
+  /// Whether [path] looks like an archive (for icon / category / listing).
+  static bool isArchive(String path) =>
+      archiveExtensions.contains(extension(path).toLowerCase());
+
+  /// Whether [path] is an archive this app can extract.
+  static bool isExtractableArchive(String path) =>
+      extractableArchiveExtensions.contains(extension(path).toLowerCase());
+
   /// Convert Byte to KB, MB, .......
   static String formatBytes(num bytes, int decimals) {
     if (bytes == 0) return '0.0 KB';
@@ -67,7 +100,6 @@ class FileUtils {
         );
       } catch (e) {
         allFilesInPath = [];
-        // print(e);
       }
       files.addAll(allFilesInPath);
     }
@@ -122,7 +154,6 @@ class FileUtils {
         }
       } else {
         if (!file.path.contains('/storage/emulated/0/Android')) {
-          //          print(file.path);
           if (!showHidden) {
             if (!file.isHidden) {
               files.addAll(
@@ -137,14 +168,12 @@ class FileUtils {
         }
       }
     }
-    //    print(files);
     return files;
   }
 
   static Future<bool> extractArchive(String source, String destination) async {
     decompressing = true;
-    List supported = ['.zip', '.tar', '.zlib', '.gz', 'bz2', '.xz'];
-    if (supported.contains(extension(source))) {
+    if (isExtractableArchive(source)) {
       try {
         await extractFileToDisk(
           source,
