@@ -68,10 +68,6 @@ class _CategoryOneState extends State<CategoryOne> {
                       for (final label in provider.thumbnailTabs)
                         Tab(text: label),
                     ],
-                    onTap: (val) => provider.switchCurrentFiles(
-                      provider.thumbnailFiles,
-                      provider.thumbnailTabs[val],
-                    ),
                   ),
                 ),
                 body: Visibility(
@@ -87,7 +83,8 @@ class _CategoryOneState extends State<CategoryOne> {
                   ),
                   child: TabBarView(
                     children: [
-                      for (final (index, _) in provider.thumbnailTabs.indexed)
+                      for (final (index, label)
+                          in provider.thumbnailTabs.indexed)
                         CustomScrollView(
                           primary: false,
                           slivers: <Widget>[
@@ -101,8 +98,10 @@ class _CategoryOneState extends State<CategoryOne> {
                                   for (final (i, item)
                                       in (index == 0
                                               ? provider.thumbnailFiles
-                                              : provider.currentFiles.reversed
-                                                    .toList())
+                                              : provider.filesForTab(
+                                                  provider.thumbnailFiles,
+                                                  label,
+                                                ))
                                           .indexed)
                                     _mediaTile(i, item),
                                 ],

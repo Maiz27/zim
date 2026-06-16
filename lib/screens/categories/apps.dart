@@ -21,9 +21,17 @@ class Apps extends StatefulWidget {
 }
 
 class _AppsState extends State<Apps> {
+  // Created once so the installed-apps query doesn't re-run on every rebuild.
+  late final Future<List<AppInfo>> _installedApps;
+
   @override
   void initState() {
     super.initState();
+    _installedApps = FlutterDeviceApps.listApps(
+      onlyLaunchable: true,
+      includeSystem: true,
+      includeIcons: true,
+    );
     SchedulerBinding.instance.addPostFrameCallback((_) {
       Provider.of<CategoryProvider>(
         context,
@@ -89,21 +97,33 @@ class _AppsState extends State<Apps> {
 
   Widget _installedTab() {
     return FutureBuilder<List<AppInfo>>(
-      future: FlutterDeviceApps.listApps(
-        onlyLaunchable: true,
-        includeSystem: true,
-        includeIcons: true,
-      ),
+      future: _installedApps,
       builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          List<AppInfo>? data = snapshot.data;
-          // Sort the App List on Alphabetical Order
-          data!.sort(
-            (app1, app2) => (app1.appName ?? '').toLowerCase().compareTo(
-              (app2.appName ?? '').toLowerCase(),
-            ),
+        if (snapshot.hasError) {
+          return const EmptyState(
+            icon: Icons.error_outline,
+            title: 'Could not load apps',
+            message: 'The installed app list is unavailable right now.',
           );
-          return ListView.separated(
+        }
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const CustomLoader();
+        }
+        final data = snapshot.data ?? <AppInfo>[];
+        if (data.isEmpty) {
+          return const EmptyState(
+            icon: Icons.apps_outlined,
+            title: 'No apps found',
+            message: 'Installed apps will appear here.',
+          );
+        }
+        // Sort the App List on Alphabetical Order
+        data.sort(
+          (app1, app2) => (app1.appName ?? '').toLowerCase().compareTo(
+            (app2.appName ?? '').toLowerCase(),
+          ),
+        );
+        return ListView.separated(
             padding: const EdgeInsets.only(left: AppSpacing.md),
             itemCount: data.length,
             itemBuilder: (BuildContext context, int index) {
@@ -127,8 +147,6 @@ class _AppsState extends State<Apps> {
               return const CustomDivider();
             },
           );
-        }
-        return const CustomLoader();
       },
     );
   }

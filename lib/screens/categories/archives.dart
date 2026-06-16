@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../providers/category_provider.dart';
 import '../../utils/design_tokens.dart';
 import '../../widgets/custom_divider.dart';
+import '../../widgets/custom_loader.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/file/file_item.dart';
 import '../../widgets/motion.dart';
@@ -36,7 +37,9 @@ class _ArchivesState extends State<Archives> {
           (BuildContext context, CategoryProvider provider, Widget? child) {
             return Scaffold(
               appBar: AppBar(title: Text(widget.title)),
-              body: Visibility(
+              body: provider.loading
+                  ? const CustomLoader()
+                  : Visibility(
                 visible: provider.currentFiles.isNotEmpty,
                 replacement: const EmptyState(
                   icon: Icons.folder_zip_outlined,

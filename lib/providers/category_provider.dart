@@ -143,7 +143,7 @@ class CategoryProvider extends ChangeNotifier {
       for (final dir in storages) {
         final target = '${dir.path}$dirName';
         if (!Directory(target).existsSync()) continue;
-        for (final entry in _repo.listEntries(target, showHidden: true)) {
+        for (final entry in _repo.listEntries(target, showHidden: showHidden)) {
           if (!entry.isDir) {
             files.add(entry);
             tabSet.add(_parentDirName(entry.path));
@@ -159,19 +159,6 @@ class CategoryProvider extends ChangeNotifier {
       currentFiles = files;
     }
     setLoading(false);
-  }
-
-  Future<void> switchCurrentFiles(List<Entry> list, String label) async {
-    currentFiles = await compute(getTabImages, (list, label));
-    notifyListeners();
-  }
-
-  static List<Entry> getTabImages((List<Entry>, String) args) {
-    final (items, label) = args;
-    return [
-      for (final entry in items)
-        if (_parentDirName(entry.path) == label) entry,
-    ];
   }
 
   void setLoading(bool value) {
