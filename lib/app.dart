@@ -26,29 +26,16 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     isFirstLaunch();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       Provider.of<CoreProvider>(context, listen: false).checkSpace();
-      SystemChrome.setEnabledSystemUIMode(
-        SystemUiMode.manual,
-        overlays: SystemUiOverlay.values,
-      );
-      SystemChrome.setSystemUIOverlayStyle(
-        SystemUiOverlayStyle(
-          statusBarColor: Theme.of(context).primaryColor,
-          systemNavigationBarColor: Colors.black,
-          statusBarIconBrightness:
-              Theme.of(context).primaryColor ==
-                  ThemeConfig.darkTheme.primaryColor
-              ? Brightness.light
-              : Brightness.dark,
-        ),
-      );
     });
   }
 
   Future<void> isFirstLaunch() async {
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-    var first = preferences.getBool('first_time');
+    final preferences = await SharedPreferences.getInstance();
+    final first = preferences.getBool('first_time');
     isFirst = first;
     if (first == null) {
       preferences.setBool('first_time', false);
@@ -64,9 +51,27 @@ class _MyAppState extends State<MyApp> {
           debugShowCheckedModeBanner: false,
           navigatorKey: appProvider.navigatorKey,
           title: 'Zim',
-          theme: appProvider.theme,
+          theme: ThemeConfig.lightTheme,
           darkTheme: ThemeConfig.darkTheme,
-          // home: const GetStarted(),
+          themeMode: appProvider.themeMode,
+          builder: (context, child) {
+            // Edge-to-edge: transparent system bars whose icons contrast the
+            // resolved theme brightness (handles ThemeMode.system correctly).
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            final overlay =
+                (isDark
+                        ? SystemUiOverlayStyle.light
+                        : SystemUiOverlayStyle.dark)
+                    .copyWith(
+                      statusBarColor: Colors.transparent,
+                      systemNavigationBarColor: Colors.transparent,
+                      systemNavigationBarContrastEnforced: false,
+                    );
+            return AnnotatedRegion<SystemUiOverlayStyle>(
+              value: overlay,
+              child: child ?? const SizedBox.shrink(),
+            );
+          },
           home: Platform.isIOS
               ? const IosError()
               : Splash(first: isFirst ?? true),
