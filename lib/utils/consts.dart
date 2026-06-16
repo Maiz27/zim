@@ -8,73 +8,74 @@ import 'package:zim/utils/icon_font_helper.dart';
 
 import '../screens/categories/recent.dart';
 
+/// A browseable file category shown on the home grid.
+///
+/// [screen] is a [WidgetBuilder] (not a pre-built widget) so category screens
+/// are constructed lazily on tap rather than eagerly at app start.
+class Category {
+  const Category({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.screen,
+  });
+
+  final String title;
+  final String icon;
+  final MaterialColor color;
+  final WidgetBuilder screen;
+}
+
 class Constants {
-  static List<T> map<T>(List list, Function handler) {
-    List<T> result = [];
-    for (var i = 0; i < list.length; i++) {
-      result.add(handler(i, list[i]));
-    }
-
-    return result;
-  }
-
-  static List categories = [
-    {
-      'title': 'Images',
-      'icon': IconFontHelper.img,
-      'path': '',
-      'color': Colors.teal,
-      'screen': const CategoryOne(title: 'Images'),
-    },
-    {
-      'title': 'Videos',
-      'icon': IconFontHelper.video,
-      'path': '',
-      'color': Colors.red,
-      'screen': const CategoryOne(title: 'Video'),
-    },
-    {
-      'title': 'Documents',
-      'icon': IconFontHelper.document,
-      'path': '',
-      'color': Colors.blue,
-      'screen': const CategoryTwo(title: 'Documents'),
-    },
-    {
-      'title': 'Audio',
-      'icon': IconFontHelper.audio,
-      'path': '',
-      'color': Colors.pink,
-      'screen': const CategoryTwo(title: 'Audio'),
-    },
-    {
-      'title': 'Apps',
-      'icon': IconFontHelper.android,
-      'path': '',
-      'color': Colors.green,
-      'screen': const Apps(title: 'Apps'),
-    },
-    {
-      'title': 'Downloads',
-      'icon': IconFontHelper.download,
-      'path': '',
-      'color': Colors.yellow,
-      'screen': const Downloads(title: 'Downloads'),
-    },
-    {
-      'title': 'Archives',
-      'icon': IconFontHelper.archive,
-      'path': '',
-      'color': Colors.purple,
-      'screen': const Archives(title: 'Archives'),
-    },
-    {
-      'title': 'Recent',
-      'icon': IconFontHelper.recent,
-      'path': '',
-      'color': Colors.orange,
-      'screen': const Recent(title: 'Recent'),
-    },
+  static final List<Category> categories = [
+    Category(
+      title: 'Images',
+      icon: IconFontHelper.img,
+      color: Colors.teal,
+      screen: (_) => const CategoryOne(title: 'Images'),
+    ),
+    Category(
+      title: 'Videos',
+      icon: IconFontHelper.video,
+      color: Colors.red,
+      screen: (_) => const CategoryOne(title: 'Video'),
+    ),
+    Category(
+      title: 'Documents',
+      icon: IconFontHelper.document,
+      color: Colors.blue,
+      screen: (_) => const CategoryTwo(title: 'Documents'),
+    ),
+    Category(
+      title: 'Audio',
+      icon: IconFontHelper.audio,
+      color: Colors.pink,
+      screen: (_) => const CategoryTwo(title: 'Audio'),
+    ),
+    Category(
+      title: 'Apps',
+      icon: IconFontHelper.android,
+      color: Colors.green,
+      screen: (_) => const Apps(title: 'Apps'),
+    ),
+    Category(
+      title: 'Downloads',
+      icon: IconFontHelper.download,
+      color: Colors.yellow,
+      screen: (_) => const Downloads(title: 'Downloads'),
+    ),
+    Category(
+      title: 'Archives',
+      icon: IconFontHelper.archive,
+      color: Colors.purple,
+      screen: (_) => const Archives(title: 'Archives'),
+    ),
+    Category(
+      title: 'Recent',
+      icon: IconFontHelper.recent,
+      color: Colors.orange,
+      screen: (_) => const Recent(title: 'Recent'),
+    ),
   ];
 
   static List sortList = [
