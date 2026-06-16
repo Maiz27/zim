@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 
 import '../utils/design_tokens.dart';
 
 class PathBar extends StatelessWidget implements PreferredSizeWidget {
-  final List paths;
+  final List<String> paths;
   final Function(int) onChanged;
   final IconData? icon;
 
@@ -32,8 +33,7 @@ class PathBar extends StatelessWidget implements PreferredSizeWidget {
             final Color segmentColor = active
                 ? colorScheme.primary
                 : colorScheme.onSurfaceVariant;
-            String i = paths[index];
-            List split = i.split('/');
+            final String segment = p.basename(paths[index]);
             if (index == 0) {
               return IconButton(
                 icon: Icon(icon ?? Icons.smartphone, color: segmentColor),
@@ -51,7 +51,7 @@ class PathBar extends StatelessWidget implements PreferredSizeWidget {
                       horizontal: AppSpacing.xs,
                     ),
                     child: Text(
-                      '${split[split.length - 1]}',
+                      segment,
                       style: textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: segmentColor,
