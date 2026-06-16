@@ -30,38 +30,50 @@ class CoreProvider extends ChangeNotifier {
     availableStorage.clear();
     notifyListeners();
 
-    final List<Directory> dirList = await getExternalStorageDirectories() ?? [];
-    availableStorage.addAll(dirList);
+    try {
+      final List<Directory> dirList =
+          await getExternalStorageDirectories() ?? [];
+      availableStorage.addAll(dirList);
 
-    final int free =
-        await _storageChannel.invokeMethod<int>('getStorageFreeSpace') ?? 0;
-    final int total =
-        await _storageChannel.invokeMethod<int>('getStorageTotalSpace') ?? 0;
-    freeSpace = free;
-    totalSpace = total;
-    usedSpace = total - free;
+      final int free =
+          await _storageChannel.invokeMethod<int>('getStorageFreeSpace') ?? 0;
+      final int total =
+          await _storageChannel.invokeMethod<int>('getStorageTotalSpace') ?? 0;
+      freeSpace = free;
+      totalSpace = total;
+      usedSpace = total - free;
 
-    if (dirList.length > 1) {
-      final int freeSD = await _storageChannel
-              .invokeMethod<int>('getExternalStorageFreeSpace') ??
-          0;
-      final int totalSD = await _storageChannel
-              .invokeMethod<int>('getExternalStorageTotalSpace') ??
-          0;
-      freeSDSpace = freeSD;
-      totalSDSpace = totalSD;
-      usedSDSpace = totalSD - freeSD;
+      if (dirList.length > 1) {
+        final int freeSD = await _storageChannel
+                .invokeMethod<int>('getExternalStorageFreeSpace') ??
+            0;
+        final int totalSD = await _storageChannel
+                .invokeMethod<int>('getExternalStorageTotalSpace') ??
+            0;
+        freeSDSpace = freeSD;
+        totalSDSpace = totalSD;
+        usedSDSpace = totalSD - freeSD;
+      }
+    } catch (e) {
+      // A native storage query failed; surface an empty state rather than a
+      // spinner that never resolves.
+      debugPrint('checkSpace failed: $e');
+    } finally {
+      storageLoading = false;
+      notifyListeners();
     }
-
-    storageLoading = false;
-    notifyListeners();
 
     getRecentFiles();
   }
 
   Future<void> getRecentFiles() async {
-    recentFiles = await _repo.recent(showHidden: false);
-    recentLoading = false;
-    notifyListeners();
+    try {
+      recentFiles = await _repo.recent(showHidden: false);
+    } catch (e) {
+      debugPrint('getRecentFiles failed: $e');
+    } finally {
+      recentLoading = false;
+      notifyListeners();
+    }
   }
 }
