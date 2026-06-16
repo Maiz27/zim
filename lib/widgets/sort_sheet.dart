@@ -51,6 +51,7 @@ class _SortSheetState extends State<SortSheet> {
                         context,
                         listen: false,
                       ).setSort(index);
+                      if (!mounted) return;
                       navigator.pop();
                     },
                     contentPadding: EdgeInsets.zero,

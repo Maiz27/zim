@@ -57,11 +57,12 @@ class _AddFileDialogState extends State<AddFileDialog> {
                     widget.path,
                     name.text,
                   );
+                  if (!context.mounted) return;
+                  Navigator.pop(context);
                 } on FileOpException catch (e) {
+                  // Keep the dialog open so the user can retry (e.g. rename).
                   Dialogs.showToast(e.message);
                 }
-                if (!context.mounted) return;
-                Navigator.pop(context);
               },
             ),
             const SizedBox(height: AppSpacing.sm),

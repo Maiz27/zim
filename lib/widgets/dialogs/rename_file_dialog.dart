@@ -42,7 +42,9 @@ class _RenameFileDialogState extends State<RenameFileDialog> {
     try {
       await const FileRepository().rename(entity, name.text);
     } on FileOpException catch (e) {
+      // Keep the dialog open so the user can correct the name and retry.
       Dialogs.showToast(e.message);
+      return;
     }
     if (!mounted) return;
     Navigator.pop(context);

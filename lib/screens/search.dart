@@ -22,6 +22,12 @@ class Search extends SearchDelegate {
   Timer? _debounce;
 
   @override
+  void close(BuildContext context, dynamic result) {
+    _debounce?.cancel();
+    super.close(context, result);
+  }
+
+  @override
   ThemeData appBarTheme(BuildContext context) {
     final ThemeData theme = themeData;
     return theme.copyWith(
@@ -73,9 +79,11 @@ class Search extends SearchDelegate {
         if (debouncedQuery.isEmpty) return const SizedBox();
         return FutureBuilder<List<Entry>>(
           future: provider.search(debouncedQuery),
-          builder: (BuildContext context, AsyncSnapshot snapshot) {
-            if (!snapshot.hasData) return const SizedBox();
-            if (snapshot.data.isEmpty) {
+          builder:
+              (BuildContext context, AsyncSnapshot<List<Entry>> snapshot) {
+            final results = snapshot.data;
+            if (results == null) return const SizedBox();
+            if (results.isEmpty) {
               return const EmptyState(
                 icon: Icons.search_off,
                 title: 'No matches',
@@ -83,9 +91,9 @@ class Search extends SearchDelegate {
               );
             }
             return ListView.separated(
-              itemCount: snapshot.data.length,
+              itemCount: results.length,
               itemBuilder: (BuildContext context, int index) {
-                Entry file = snapshot.data[index];
+                Entry file = results[index];
                 if (file.isDir) {
                   return DirectoryItem(
                     popTap: null,

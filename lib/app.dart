@@ -12,8 +12,6 @@ import 'screens/ios_error.dart';
 import 'screens/splash.dart';
 import 'utils/theme_config.dart';
 
-bool? isFirst;
-
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
@@ -22,6 +20,8 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  bool? _isFirst;
+
   @override
   void initState() {
     super.initState();
@@ -36,10 +36,11 @@ class _MyAppState extends State<MyApp> {
   Future<void> isFirstLaunch() async {
     final preferences = await SharedPreferences.getInstance();
     final first = preferences.getBool('first_time');
-    isFirst = first;
     if (first == null) {
-      preferences.setBool('first_time', false);
+      await preferences.setBool('first_time', false);
     }
+    if (!mounted) return;
+    setState(() => _isFirst = first);
   }
 
   @override
@@ -74,7 +75,7 @@ class _MyAppState extends State<MyApp> {
           },
           home: Platform.isIOS
               ? const IosError()
-              : Splash(first: isFirst ?? true),
+              : Splash(first: _isFirst ?? true),
         );
       },
     );

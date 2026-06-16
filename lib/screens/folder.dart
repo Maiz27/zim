@@ -48,6 +48,7 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
   }
 
   Future<void> getFiles() async {
+    if (!mounted) return;
     final settings = Provider.of<SettingsProvider>(context, listen: false);
     showHidden = settings.showHidden;
     try {
