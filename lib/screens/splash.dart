@@ -45,20 +45,19 @@ class _SplashState extends State<Splash> {
   }
 
   Future<void> requestPermission() async {
-    if (await Permission.manageExternalStorage.isDenied) {
-      if (await Permission.manageExternalStorage
-          .request()
-          .isPermanentlyDenied) {
-        // The user opted to never again see the permission request dialog for
-        // this app. The only way to change the permission's status now is to let
-        // the user manually enable it in the system settings.
-        openAppSettings();
-      } else {
-        // You can request the permission again.
-        requestPermission();
-      }
-    } else {
+    if (!await Permission.manageExternalStorage.isDenied) {
       _goNext();
+      return;
+    }
+    final PermissionStatus status =
+        await Permission.manageExternalStorage.request();
+    if (status.isGranted) {
+      _goNext();
+    } else {
+      // Denied (including permanently): the only way forward is the system
+      // settings page. Hand off there instead of re-prompting in an unbounded
+      // self-recursion.
+      openAppSettings();
     }
   }
 
