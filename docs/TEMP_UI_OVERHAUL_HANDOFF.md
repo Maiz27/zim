@@ -205,10 +205,16 @@ Verification after pass 5:
 - `flutter test` — 22/22 passing (added Entry.kindOf, sortEntries, scanEntries
   and the Entry-based classify tests).
 - `flutter build apk --debug` — succeeds.
-- NOT yet emulator-verified: smoke-test the heavy paths (open Images/Documents/
-  Apps, Recent, Search a query, a deep folder) to confirm no UI freeze and that
-  lists/sort/thumbnails are still correct. Note recent is now sorted by
-  modified (was last-accessed, which Android often disables).
+- Emulator-verified (Pixel_8a, API 36, `MANAGE_EXTERNAL_STORAGE` granted) with
+  seeded test files: Browse (storage + grid), Documents/Images categories
+  (classify-by-kind, parent-dir tabs, prefetched-size subtitles/overlays), tab
+  switch, Recent (modified-desc, per-kind chips), folder browse + breadcrumb,
+  sort-by-size (re-orders from prefetched Entry.size, persists), show-hidden
+  toggle (persists), and debounced search — no freezes or crashes (logcat
+  clean). See `docs/ui-screenshots/readpath_*.png`. Note recent is now sorted by
+  modified (was last-accessed, which Android often disables). Image thumbnails
+  rendered the error-fallback glyph only because the seed PNGs were 1×1; real
+  photos decode normally.
 
 ### Outstanding / future ideas (optional)
 
