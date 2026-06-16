@@ -4,9 +4,6 @@ This is a temporary handoff note for the next agent. Delete this file after the 
 
 ## Current State
 
-- Repo: `C:\Users\maged\.codex\worktrees\621d\zim`
-- Branch: `modernize-2026`
-- Do not commit yet; the user explicitly said to forget committing for now.
 - The project was modernized from an old Flutter/Android baseline and now builds again.
 - Verification already passed:
   - `flutter analyze`

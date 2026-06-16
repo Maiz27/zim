@@ -53,9 +53,16 @@ class _StorageSectionState extends State<StorageSection> {
             final FileSystemEntity item = coreProvider.availableStorage[safeIdx];
             final String path = FileUtils.removeDataDirectory(item.path).path;
 
+            // One label per volume so the list length always matches
+            // availableStorage (no RangeError) and 3+ volumes stay selectable.
             final List<String> list = [
               for (int i = 0; i < coreProvider.availableStorage.length; i++)
-                if (i == 0) 'Device' else if (i == 1) 'SD',
+                if (i == 0)
+                  'Device'
+                else if (i == 1)
+                  'SD'
+                else
+                  'Storage ${i + 1}',
             ];
 
             final int usedSpace = safeIdx == 0
@@ -89,11 +96,12 @@ class _StorageSectionState extends State<StorageSection> {
 
   void handleStorageItemChanged(String? value) {
     if (value == null) return;
-    if (value.toString() == 'Device') {
-      idx = 0;
-    } else if (value.toString() == 'SD') {
-      idx = 1;
-    }
-    setState(() {});
+    setState(() {
+      idx = switch (value) {
+        'Device' => 0,
+        'SD' => 1,
+        _ => (int.tryParse(value.replaceFirst('Storage ', '')) ?? 1) - 1,
+      };
+    });
   }
 }

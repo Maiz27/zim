@@ -63,8 +63,4 @@ class _BrowseState extends State<Browse> {
       ),
     );
   }
-
-  double calculatePercent(int usedSpace, int totalSpace) {
-    return double.parse((usedSpace / totalSpace * 100).toStringAsFixed(1));
-  }
 }
