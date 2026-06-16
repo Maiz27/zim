@@ -70,20 +70,111 @@ Verification after pass 2:
 - `flutter build apk --debug --target-platform android-x64` — succeeds.
 - Emulator (Pixel 8a, API 36, `MANAGE_EXTERNAL_STORAGE` granted via `appops`): app launches, splash → Get Started renders correctly. The earlier `DropdownMenuItem<Object>` crash on Browse is fixed.
 
-### Outstanding / pass 3 ideas
+### Pass 3 — landed (full visual overhaul / design system)
 
-Likely visual-polish fixes (do after the overflow pass is verified on more devices):
+The end-to-end Material 3 redesign is done and emulator-verified in both light and
+dark. New design-system foundation (the contract every screen/widget reads from):
 
-- Replace ad-hoc colors with `Theme.of(context).colorScheme` references.
-- Standardize radius/padding tokens (currently a mix of 5, 8, 10, 15, 20, 40).
-- Consider a real Material 3 `NavigationBar` / `NavigationRail` instead of the current drawer-only nav on wide screens.
-- The Get Started layered-folder backdrop is a creative liability; consider a single illustration asset instead of stacked folder glyphs.
+- `lib/utils/design_tokens.dart` (new) — `AppPalette` (brand hues), `AppSpacing`
+  (4pt scale), `AppRadius` (8/12/16/24/28 + ready-made `BorderRadius`),
+  `AppMotion` (calm ease-out durations/curves + stagger), and `FilePalette.of(kind,
+  brightness)` returning a theme-aware icon + tonal-container colour pair per
+  `FileKind`.
+- `lib/utils/theme_config.dart` (rewritten) — real M3 `ColorScheme.fromSeed` from the
+  brand teal for both brightnesses (the old config mis-assigned `surface`; fixed),
+  a tuned `TextTheme`, and full component theming (AppBar is now surface-tinted, not
+  a teal slab; Card, Filled/Outlined/Text/Elevated buttons, FAB, Dialog, BottomSheet
+  w/ drag handle, Drawer, PopupMenu, TabBar, SnackBar, ProgressIndicator,
+  InputDecoration, SegmentedButton, Divider, ListTile). `ThemeConfig.primary` etc. are
+  kept only as brand-hue aliases.
+- `lib/widgets/motion.dart` (new) — `AnimatedEntrance` (staggered fade+slide for
+  list/grid items) and `PressableScale` (subtle scale-on-press; pointer-observer so it
+  never eats gestures).
+- `lib/widgets/empty_state.dart` (new) — one calm empty/placeholder state used across
+  "no files", search misses and coming-soon screens.
 
-Untouched but worth a look in a future pass:
+Theming behaviour: `AppProvider` now stores a `ThemeMode` (key `theme_mode`:
+`system`/`light`/`dark`, default **system**). `app.dart` passes `theme`+`darkTheme`+
+`themeMode`, runs edge-to-edge, and sets a theme-aware transparent system-bar overlay
+via `MaterialApp.builder`. Settings has a `System · Light · Dark` `SegmentedButton`
+(the old boolean dark-mode switch is gone). NOTE: this changed the prefs key, so an
+existing user's old `theme` value is ignored once (they fall back to System).
 
-- `lib/screens/categories/{category_one,category_two,apps,archives,downloads}.dart` — list/grid layouts look fine but were not emulator-verified end-to-end.
-- `lib/screens/main/share.dart` and `lib/screens/main/settings.dart` — not opened during this overhaul.
-- The dropdown bug fix in `storage_item.dart` is a strong hint that `Constants.map` (in `lib/utils/consts.dart`) deserves a generic-aware refactor — every other caller currently relies on call-site type annotation (`Constants.map<Widget>(...)`).
+Every screen and widget was migrated off `ThemeConfig.*` / hardcoded
+`Colors.*` / magic radii / magic font sizes onto the tokens above:
+- Get Started: layered-folder identity kept but rebuilt on tokens, with a settled
+  navy gradient panel under the copy and a staggered folder entrance.
+- file_icon: hardcoded per-type Material colours replaced with `FilePalette` tonal
+  chips. Storage/category panels are real tonal containers. Category tiles keep their
+  per-category colour as a tonal chip + `PressableScale`. Dialog buttons are themed
+  Filled/Outlined. Search dedup'd into one helper with real `Divider`s.
+- Deleted the empty unused `lib/screens/category_one.dart`.
+
+Verification after pass 3:
+
+- `flutter analyze` — clean (No issues found).
+- `flutter test` — 3/3 passing (theme test rewritten to assert the corrected
+  brightness-matched surfaces instead of the old buggy assignment).
+- `flutter build apk --debug` — succeeds.
+- Emulator (Pixel 8a, API/Android, `MANAGE_EXTERNAL_STORAGE` granted): launches and
+  was screenshot-verified across Get Started, Browse (storage + categories), drawer,
+  folder list (dark), Settings (light + dark theme switching), and a file list with
+  tonal file-type chips. See `docs/ui-screenshots/new_*.png`.
+
+### Pass 4 — landed (architecture deepening)
+
+Read-only architecture review (improve-codebase-architecture) was run, then all
+findings were implemented. The data/domain layer is no longer raw `dart:io` and `Map`
+literals leaking into widgets:
+
+- New `lib/services/file_repository.dart` — the single seam for filesystem mutations
+  (`list` / `delete` / `rename` / `createDirectory` / `extract`). Maps POSIX errno
+  `FileSystemException`s to a typed `FileOpException` / `FileOpError` so the UI shows
+  clear, recoverable messages instead of swallowing non-permission errors. `folder.dart`
+  and all three dialogs now call the repository instead of inline `dart:io`.
+- Typed `Category` model in `consts.dart` (with a lazy `WidgetBuilder` screen, so
+  category screens aren't constructed at app start). `Constants.map<T>` (the untyped
+  helper behind the old `DropdownMenuItem<Object>` crash) was deleted; all 6 call sites
+  use Dart 3 `.indexed` / collection-for.
+- Archive extension lists were consolidated to `FileUtils.archiveExtensions` (broad:
+  icon/category/listing) and `FileUtils.extractableArchiveExtensions` (narrow: what the
+  `archive` package can extract). Fixes the real bug where `.rar`/`.7z` offered a
+  Decompress action that always failed, and the `'bz2'` (missing dot) that never matched.
+  Decompress is now only offered for extractable formats.
+- `CategoryProvider`: per-file `notifyListeners()` in loops removed (now one notify per
+  refresh); pure, unit-tested `classify(paths, type)` extracted; repeated parent-dir
+  string math folded into `_parentDirName`.
+- `CoreProvider`: ~6 notifications per refresh collapsed to one; `MethodChannel`
+  hoisted to a named seam. `storage_section.dart`: module-global `idx` moved into State,
+  and the `split('Android')[idx]` indexing bug fixed to `.first`.
+- `dir_item`/`file_item` now share `EntityTile`; `dir_popup`/`file_popup` replaced by one
+  `EntityPopup` with a typed `EntityAction = void Function(int)`. `folder.dart` gained the
+  missing `mounted` guards after awaits and uses `file is Directory` instead of
+  `toString()` sniffing.
+- Dead code removed: empty `lib/screens/category_one.dart`, commented `_RecentFiles`
+  (browse), the commented video player (video_thumbnail), `// print` debris, the dead
+  share branch in folder.dart, and the commented `fileExtension` getter.
+
+Verification after pass 4:
+
+- `flutter analyze` — clean.
+- `flutter test` — 12/12 passing (9 new in `test/architecture_test.dart` covering the
+  pure `classify` and the FileRepository list/create/rename/delete/extract ops against a
+  real temp filesystem).
+- `flutter build apk --debug` — succeeds.
+- Emulator: folder browsing (FileRepository.list), the Add Folder dialog, and creating a
+  folder were verified end-to-end (the new dir appeared on disk and in the refreshed
+  list). See `docs/ui-screenshots/arch_*.png`.
+
+### Outstanding / future ideas (optional)
+
+- Consider a real Material 3 `NavigationRail` for wide screens/tablets (still
+  drawer-only today).
+- A thin `Entry` value type (path/name/kind/isDir/size/modified) produced by the
+  repository would remove the last of the raw `dart:io` types from the UI; deferred as it
+  touches everything and the app is small.
+- Optionally bundle a brand display font (currently the platform default Roboto with a
+  tuned M3 type scale).
 
 ## Suggested Skills
 
