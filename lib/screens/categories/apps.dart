@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_device_apps/flutter_device_apps.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -31,8 +33,6 @@ class _AppsState extends State<Apps> {
     });
   }
 
-  int idx = 0;
-
   @override
   Widget build(BuildContext context) {
     return Consumer(
@@ -46,95 +46,91 @@ class _AppsState extends State<Apps> {
               child: Scaffold(
                 appBar: AppBar(
                   title: const Text('Apps'),
-                  bottom: TabBar(
+                  bottom: const TabBar(
                     isScrollable: false,
-                    tabs: const [
+                    tabs: [
                       Tab(text: 'Apks'),
                       Tab(text: 'Installed'),
                     ],
-                    onTap: (val) {
-                      setState(() {
-                        idx = val;
-                      });
-                    },
                   ),
                 ),
-                body: idx == 0
-                    ? Visibility(
-                        visible: provider.thumbnailFiles.isNotEmpty,
-                        replacement: const EmptyState(
-                          icon: Icons.android,
-                          title: 'No APKs yet',
-                          message:
-                              'Installable app packages on your device will appear here.',
-                        ),
-                        child: ListView.separated(
-                          itemCount: provider.currentFiles.length,
-                          itemBuilder: (BuildContext context, int index) {
-                            return AnimatedEntrance(
-                              index: index,
-                              child: FileItem(file: provider.currentFiles[index]),
-                            );
-                          },
-                          separatorBuilder: (BuildContext context, int index) {
-                            return const CustomDivider();
-                          },
-                        ),
-                      )
-                    : FutureBuilder<List<AppInfo>>(
-                        future: FlutterDeviceApps.listApps(
-                          onlyLaunchable: true,
-                          includeSystem: true,
-                          includeIcons: true,
-                        ),
-                        builder: (context, snapshot) {
-                          if (snapshot.hasData) {
-                            List<AppInfo>? data = snapshot.data;
-                            // Sort the App List on Alphabetical Order
-                            data!.sort(
-                              (app1, app2) =>
-                                  (app1.appName ?? '').toLowerCase().compareTo(
-                                    (app2.appName ?? '').toLowerCase(),
-                                  ),
-                            );
-                            return ListView.separated(
-                              padding: const EdgeInsets.only(left: AppSpacing.md),
-                              itemCount: data.length,
-                              itemBuilder: (BuildContext context, int index) {
-                                AppInfo app = data[index];
-                                String? packageName = app.packageName;
-                                return AnimatedEntrance(
-                                  index: index,
-                                  child: ListTile(
-                                    leading: app.iconBytes != null
-                                        ? Image.memory(
-                                            app.iconBytes!,
-                                            height: 40,
-                                            width: 40,
-                                          )
-                                        : null,
-                                    title: Text(app.appName ?? 'Unknown app'),
-                                    subtitle: Text(packageName ?? ''),
-                                    onTap: packageName == null
-                                        ? null
-                                        : () => FlutterDeviceApps.openApp(
-                                            packageName,
-                                          ),
-                                  ),
-                                );
-                              },
-                              separatorBuilder:
-                                  (BuildContext context, int index) {
-                                    return const CustomDivider();
-                                  },
-                            );
-                          }
-                          return const CustomLoader();
-                        },
-                      ),
+                body: TabBarView(
+                  children: [
+                    _apksTab(provider.thumbnailFiles),
+                    _installedTab(),
+                  ],
+                ),
               ),
             );
           },
+    );
+  }
+
+  Widget _apksTab(List<FileSystemEntity> apks) {
+    if (apks.isEmpty) {
+      return const EmptyState(
+        icon: Icons.android,
+        title: 'No APKs yet',
+        message: 'Installable app packages on your device will appear here.',
+      );
+    }
+    return ListView.separated(
+      itemCount: apks.length,
+      itemBuilder: (BuildContext context, int index) {
+        return AnimatedEntrance(
+          index: index,
+          child: FileItem(file: apks[index]),
+        );
+      },
+      separatorBuilder: (BuildContext context, int index) {
+        return const CustomDivider();
+      },
+    );
+  }
+
+  Widget _installedTab() {
+    return FutureBuilder<List<AppInfo>>(
+      future: FlutterDeviceApps.listApps(
+        onlyLaunchable: true,
+        includeSystem: true,
+        includeIcons: true,
+      ),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          List<AppInfo>? data = snapshot.data;
+          // Sort the App List on Alphabetical Order
+          data!.sort(
+            (app1, app2) => (app1.appName ?? '').toLowerCase().compareTo(
+              (app2.appName ?? '').toLowerCase(),
+            ),
+          );
+          return ListView.separated(
+            padding: const EdgeInsets.only(left: AppSpacing.md),
+            itemCount: data.length,
+            itemBuilder: (BuildContext context, int index) {
+              AppInfo app = data[index];
+              String? packageName = app.packageName;
+              return AnimatedEntrance(
+                index: index,
+                child: ListTile(
+                  leading: app.iconBytes != null
+                      ? Image.memory(app.iconBytes!, height: 40, width: 40)
+                      : null,
+                  title: Text(app.appName ?? 'Unknown app'),
+                  subtitle: Text(packageName ?? ''),
+                  onTap: packageName == null
+                      ? null
+                      : () => FlutterDeviceApps.openApp(packageName),
+                ),
+              );
+            },
+            separatorBuilder: (BuildContext context, int index) {
+              return const CustomDivider();
+            },
+          );
+        }
+        return const CustomLoader();
+      },
     );
   }
 }
