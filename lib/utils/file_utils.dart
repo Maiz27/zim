@@ -4,14 +4,10 @@ import 'dart:math';
 import 'package:archive/archive_io.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
-import 'package:mime/mime.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:zim/utils/extensions.dart';
 
 class FileUtils {
-  static String waPath = '/storage/emulated/0/WhatsApp/Media/.Statuses';
-
   /// Extensions treated as archives for icons, the Archives category and the
   /// file listing. Broad: includes formats we recognise but cannot extract.
   static const List<String> archiveExtensions = [
@@ -55,161 +51,14 @@ class FileUtils {
     return '${(bytes / pow(k, i)).toStringAsFixed(dm)} ${sizes[i]}';
   }
 
-  /// Get mime information of a file
-  static String getMime(String path) {
-    File file = File(path);
-    String mimeType = lookupMimeType(file.path) ?? '';
-    return mimeType;
-  }
-
-  /// Return all available Storage path
+  /// Return all available storage roots (with the Android data suffix removed).
   static Future<List<Directory>> getStorageList() async {
-    List<Directory> paths = (await getExternalStorageDirectories())!;
-    List<Directory> filteredPaths = <Directory>[];
-    for (Directory dir in paths) {
-      filteredPaths.add(removeDataDirectory(dir.path));
-    }
-    return filteredPaths;
+    final List<Directory> paths = await getExternalStorageDirectories() ?? [];
+    return [for (final dir in paths) removeDataDirectory(dir.path)];
   }
 
   static Directory removeDataDirectory(String path) {
     return Directory(path.split('Android')[0]);
-  }
-
-  /// Get all Files and Directories in a Directory
-  static Future<List<FileSystemEntity>> getFilesInPath(String path) async {
-    Directory dir = Directory(path);
-    return dir.listSync();
-  }
-
-  /// Recursively collects file paths under each root in [args] (a
-  /// `(roots, showHidden)` record). Runs inside a background isolate via
-  /// [getAllFilePaths] + `compute`, so it must stay free of platform channels —
-  /// the storage roots are resolved on the main isolate and passed in.
-  static List<String> scanPaths((List<String>, bool) args) {
-    final (roots, showHidden) = args;
-    final files = <String>[];
-    for (final root in roots) {
-      try {
-        _collectPaths(root, showHidden, files);
-      } catch (_) {
-        // Skip unreadable roots rather than aborting the whole scan.
-      }
-    }
-    return files;
-  }
-
-  static void _collectPaths(String path, bool showHidden, List<String> out) {
-    for (final entity in Directory(path).listSync()) {
-      final bool hidden = entity.isHidden;
-      if (FileSystemEntity.isFileSync(entity.path)) {
-        if (showHidden || !hidden) out.add(entity.path);
-      } else {
-        if (entity.path.contains('/storage/emulated/0/Android')) continue;
-        if (showHidden || !hidden) {
-          try {
-            _collectPaths(entity.path, showHidden, out);
-          } catch (_) {
-            // Skip directories we cannot read.
-          }
-        }
-      }
-    }
-  }
-
-  /// All file paths on the device, scanned off the UI isolate. Storage roots
-  /// are resolved here (platform channel) then the recursive walk is offloaded
-  /// to a background isolate so it never blocks the frame.
-  static Future<List<String>> getAllFilePaths({bool showHidden = false}) async {
-    final storages = await getStorageList();
-    final roots = storages.map((d) => d.path).toList();
-    return compute(scanPaths, (roots, showHidden));
-  }
-
-  /// Get all Files on the Device
-  static Future<List<FileSystemEntity>> getAllFiles({
-    bool showHidden = false,
-  }) async {
-    List<Directory> storages = await getStorageList();
-    List<FileSystemEntity> files = <FileSystemEntity>[];
-    for (Directory dir in storages) {
-      List<FileSystemEntity> allFilesInPath = [];
-      // This is important to catch storage errors
-      try {
-        allFilesInPath = await getAllFilesInPath(
-          dir.path,
-          showHidden: showHidden,
-        );
-      } catch (e) {
-        allFilesInPath = [];
-      }
-      files.addAll(allFilesInPath);
-    }
-    return files;
-  }
-
-  static Future<List<FileSystemEntity>> getRecentFiles({
-    bool showHidden = false,
-  }) async {
-    final paths = await getAllFilePaths(showHidden: showHidden);
-    final files = paths.map((p) => File(p)).toList();
-    files.sort(
-      (a, b) => a.lastAccessedSync().compareTo(b.lastAccessedSync()),
-    );
-    return files.reversed.toList();
-  }
-
-  static Future<List<FileSystemEntity>> searchFiles(
-    String query, {
-    bool showHidden = false,
-  }) async {
-    List<Directory> storage = await getStorageList();
-    List<FileSystemEntity> files = <FileSystemEntity>[];
-    for (Directory dir in storage) {
-      List fs = await getAllFilesInPath(dir.path, showHidden: showHidden);
-      for (FileSystemEntity fs in fs) {
-        if (basename(fs.path).toLowerCase().contains(query.toLowerCase())) {
-          files.add(fs);
-        }
-      }
-    }
-    return files;
-  }
-
-  /// Get all files
-  static Future<List<FileSystemEntity>> getAllFilesInPath(
-    String path, {
-    bool showHidden = false,
-  }) async {
-    List<FileSystemEntity> files = <FileSystemEntity>[];
-    Directory d = Directory(path);
-    List<FileSystemEntity> l = d.listSync();
-    for (FileSystemEntity file in l) {
-      if (FileSystemEntity.isFileSync(file.path)) {
-        if (!showHidden) {
-          if (!file.isHidden) {
-            files.add(file);
-          }
-        } else {
-          files.add(file);
-        }
-      } else {
-        if (!file.path.contains('/storage/emulated/0/Android')) {
-          if (!showHidden) {
-            if (!file.isHidden) {
-              files.addAll(
-                await getAllFilesInPath(file.path, showHidden: showHidden),
-              );
-            }
-          } else {
-            files.addAll(
-              await getAllFilesInPath(file.path, showHidden: showHidden),
-            );
-          }
-        }
-      }
-    }
-    return files;
   }
 
   static Future<bool> extractArchive(String source, String destination) async {
@@ -244,64 +93,5 @@ class FileUtils {
     } else {
       return DateFormat('MMM dd, HH:mm').format(DateTime.parse(iso));
     }
-  }
-
-  static List<FileSystemEntity> sortList(
-    List<FileSystemEntity> list,
-    int sort,
-  ) {
-    switch (sort) {
-      /// Sort by name
-      case 0:
-        list.sort(
-          (f1, f2) => basename(
-            f1.path,
-          ).toLowerCase().compareTo(basename(f2.path).toLowerCase()),
-        );
-        break;
-
-      case 1:
-        list.sort(
-          (f1, f2) => basename(
-            f2.path,
-          ).toLowerCase().compareTo(basename(f1.path).toLowerCase()),
-        );
-        break;
-
-      /// Sort by date
-      case 2:
-        list.sort(
-          (FileSystemEntity f1, FileSystemEntity f2) =>
-              f1.statSync().modified.compareTo(f2.statSync().modified),
-        );
-        break;
-
-      case 3:
-        list.sort(
-          (FileSystemEntity f1, FileSystemEntity f2) =>
-              f2.statSync().modified.compareTo(f1.statSync().modified),
-        );
-        break;
-
-      /// sort by size
-      case 4:
-        list.sort(
-          (FileSystemEntity f1, FileSystemEntity f2) =>
-              f2.statSync().size.compareTo(f1.statSync().size),
-        );
-        break;
-
-      case 5:
-        list.sort(
-          (FileSystemEntity f1, FileSystemEntity f2) =>
-              f1.statSync().size.compareTo(f2.statSync().size),
-        );
-        break;
-
-      default:
-        list.sort();
-    }
-
-    return list;
   }
 }

@@ -5,7 +5,6 @@ import 'package:zim/models/entry.dart';
 import 'package:zim/providers/category_provider.dart';
 import 'package:zim/services/file_repository.dart';
 import 'package:zim/utils/design_tokens.dart';
-import 'package:zim/utils/file_utils.dart';
 
 void main() {
   group('CategoryProvider.classify (pure)', () {
@@ -94,7 +93,7 @@ void main() {
     });
   });
 
-  group('FileUtils.scanPaths (offloaded walk)', () {
+  group('FileRepository.scanEntries (offloaded walk)', () {
     late Directory tmp;
 
     setUp(() async {
@@ -110,19 +109,27 @@ void main() {
     });
 
     test('recurses into subdirectories and hides dotfiles by default', () {
-      final found = FileUtils.scanPaths(([tmp.path], false));
-      expect(found.any((p) => p.endsWith('top.txt')), isTrue);
-      expect(found.any((p) => p.endsWith('nested.txt')), isTrue);
-      expect(found.any((p) => p.endsWith('.hidden.txt')), isFalse);
+      final found = FileRepository.scanEntries(([tmp.path], false));
+      expect(found.any((e) => e.name == 'top.txt'), isTrue);
+      expect(found.any((e) => e.name == 'nested.txt'), isTrue);
+      expect(found.any((e) => e.name == '.hidden.txt'), isFalse);
+    });
+
+    test('prefetches size into each entry', () {
+      final found = FileRepository.scanEntries(([tmp.path], false));
+      final top = found.firstWhere((e) => e.name == 'top.txt');
+      expect(top.size, 1); // wrote a single byte 'x'
+      expect(top.isDir, isFalse);
     });
 
     test('includes dotfiles when showHidden is set', () {
-      final found = FileUtils.scanPaths(([tmp.path], true));
-      expect(found.any((p) => p.endsWith('.hidden.txt')), isTrue);
+      final found = FileRepository.scanEntries(([tmp.path], true));
+      expect(found.any((e) => e.name == '.hidden.txt'), isTrue);
     });
 
     test('skips unreadable roots without throwing', () {
-      final found = FileUtils.scanPaths((['${tmp.path}/does_not_exist'], false));
+      final found =
+          FileRepository.scanEntries((['${tmp.path}/does_not_exist'], false));
       expect(found, isEmpty);
     });
   });
