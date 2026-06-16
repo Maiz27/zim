@@ -1,13 +1,14 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
+import '../models/entry.dart';
 import '../providers/category_provider.dart';
 import '../services/file_repository.dart';
 import '../utils/design_tokens.dart';
 import '../utils/dialogs.dart';
-import '../utils/file_utils.dart';
 import '../widgets/custom_divider.dart';
 import '../widgets/dialogs/decompress_archive_dialog.dart';
 import '../widgets/dir_item.dart';
@@ -36,7 +37,7 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
   late String path;
   List<String> paths = <String>[];
 
-  List<FileSystemEntity> files = <FileSystemEntity>[];
+  List<Entry> files = <Entry>[];
   bool showHidden = false;
 
   @override
@@ -50,10 +51,10 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
     final provider = Provider.of<CategoryProvider>(context, listen: false);
     showHidden = provider.showHidden;
     try {
-      final listed = _repo.list(path, showHidden: showHidden);
-      files = FileUtils.sortList(listed, provider.sort);
+      final listed = _repo.listEntries(path, showHidden: showHidden);
+      files = FileRepository.sortEntries(listed, provider.sort);
     } on FileOpException catch (e) {
-      files = <FileSystemEntity>[];
+      files = <Entry>[];
       if (!mounted) return;
       Dialogs.showToast(e.message);
       if (e.kind == FileOpError.permissionDenied) {
@@ -174,22 +175,22 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
             ),
             itemCount: files.length,
             itemBuilder: (BuildContext context, int index) {
-              final FileSystemEntity file = files[index];
-              if (file is Directory) {
+              final Entry entry = files[index];
+              if (entry.isDir) {
                 return AnimatedEntrance(
                   index: index,
                   child: DirectoryItem(
                     popTap: (v) {
                       if (v == 0) {
-                        renameDialog(context, file.path, 'dir');
+                        renameDialog(context, entry.path, 'dir');
                       } else if (v == 1) {
-                        deleteFile(file);
+                        deleteFile(entry);
                       }
                     },
-                    file: file,
+                    file: entry,
                     tap: () {
-                      paths.add(file.path);
-                      path = file.path;
+                      paths.add(entry.path);
+                      path = entry.path;
                       setState(() {});
                       getFiles();
                     },
@@ -199,14 +200,18 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
               return AnimatedEntrance(
                 index: index,
                 child: FileItem(
-                  file: file,
+                  file: entry,
                   popTap: (v) {
                     if (v == 0) {
-                      renameDialog(context, file.path, 'file');
+                      renameDialog(context, entry.path, 'file');
                     } else if (v == 1) {
-                      deleteFile(file);
+                      deleteFile(entry);
                     } else if (v == 2) {
-                      decompressDialog(context, file.path, file.parent.path);
+                      decompressDialog(
+                        context,
+                        entry.path,
+                        p.dirname(entry.path),
+                      );
                     }
                   },
                 ),
@@ -226,9 +231,11 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
     );
   }
 
-  Future<void> deleteFile(FileSystemEntity file) async {
+  Future<void> deleteFile(Entry entry) async {
     try {
-      await _repo.delete(file);
+      await _repo.delete(
+        entry.isDir ? Directory(entry.path) : File(entry.path),
+      );
       if (mounted) Dialogs.showToast('Delete Successful');
     } on FileOpException catch (e) {
       if (mounted) Dialogs.showToast(e.message);

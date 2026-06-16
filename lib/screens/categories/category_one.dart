@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:mime/mime.dart';
 import 'package:open_file/open_file.dart';
 import 'package:provider/provider.dart';
 
+import '../../models/entry.dart';
 import '../../providers/category_provider.dart';
 import '../../utils/design_tokens.dart';
 import '../../utils/file_utils.dart';
@@ -44,13 +44,8 @@ class _CategoryOneState extends State<CategoryOne> {
     });
   }
 
-  Widget _mediaTile(int index, FileSystemEntity item) {
-    final file = File(item.path);
-    final mimeType = lookupMimeType(file.path) ?? '';
-    return AnimatedEntrance(
-      index: index,
-      child: _MediaTile(file: file, mimeType: mimeType),
-    );
+  Widget _mediaTile(int index, Entry item) {
+    return AnimatedEntrance(index: index, child: _MediaTile(entry: item));
   }
 
   @override
@@ -126,15 +121,14 @@ class _CategoryOneState extends State<CategoryOne> {
 }
 
 class _MediaTile extends StatelessWidget {
-  final File file;
-  final String mimeType;
+  final Entry entry;
 
-  const _MediaTile({required this.file, required this.mimeType});
+  const _MediaTile({required this.entry});
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final isVideo = mimeType.split('/')[0] == 'video';
+    final isVideo = entry.kind == FileKind.video;
     // media overlay: white-on-media label for legibility over thumbnails
     final overlayStyle = Theme.of(context).textTheme.labelMedium?.copyWith(
       color: Colors.white,
@@ -142,7 +136,7 @@ class _MediaTile extends StatelessWidget {
 
     return PressableScale(
       child: InkWell(
-        onTap: () => OpenFile.open(file.path),
+        onTap: () => OpenFile.open(entry.path),
         borderRadius: AppRadius.brMd,
         child: ClipRRect(
           borderRadius: AppRadius.brMd,
@@ -169,7 +163,7 @@ class _MediaTile extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
                             Text(
-                              FileUtils.formatBytes(file.lengthSync(), 1),
+                              FileUtils.formatBytes(entry.size, 1),
                               style: overlayStyle,
                             ),
                             const SizedBox(width: AppSpacing.xs),
@@ -182,21 +176,21 @@ class _MediaTile extends StatelessWidget {
                           ],
                         )
                       : Text(
-                          FileUtils.formatBytes(file.lengthSync(), 1),
+                          FileUtils.formatBytes(entry.size, 1),
                           style: overlayStyle,
                         ),
                 ),
               ),
             ),
             child: isVideo
-                ? FileIcon(file: file)
+                ? FileIcon(entry: entry)
                 : Image(
                     fit: BoxFit.cover,
                     errorBuilder: (b, o, c) {
                       return const Icon(Icons.image);
                     },
                     image: ResizeImage(
-                      FileImage(File(file.path)),
+                      FileImage(File(entry.path)),
                       width: 150,
                       height: 150,
                     ),

@@ -9,15 +9,15 @@ import 'package:zim/utils/file_utils.dart';
 
 void main() {
   group('CategoryProvider.classify (pure)', () {
-    final paths = [
+    final entries = [
       '/storage/emulated/0/Download/installer.apk',
       '/storage/emulated/0/Music/song.mp3',
       '/storage/emulated/0/Docs/report.pdf',
       '/storage/emulated/0/Backups/data.zip',
-    ];
+    ].map((path) => Entry.of(File(path))).toList();
 
     test('filters apks and derives parent-dir tabs', () {
-      final (files, tabs) = CategoryProvider.classify(paths, 'application');
+      final (files, tabs) = CategoryProvider.classify(entries, 'application');
       expect(files.length, 1);
       expect(files.first.path.endsWith('installer.apk'), isTrue);
       expect(tabs.first, 'All');
@@ -25,19 +25,19 @@ void main() {
     });
 
     test('filters documents by extension', () {
-      final (files, _) = CategoryProvider.classify(paths, 'text');
+      final (files, _) = CategoryProvider.classify(entries, 'text');
       expect(files.length, 1);
       expect(files.first.path.endsWith('report.pdf'), isTrue);
     });
 
     test('filters audio by mime type', () {
-      final (files, _) = CategoryProvider.classify(paths, 'audio');
+      final (files, _) = CategoryProvider.classify(entries, 'audio');
       expect(files.length, 1);
       expect(files.first.path.endsWith('song.mp3'), isTrue);
     });
 
     test('archive uses the shared (broad) extension set', () {
-      final (files, _) = CategoryProvider.classify(paths, 'archive');
+      final (files, _) = CategoryProvider.classify(entries, 'archive');
       expect(files.length, 1);
       expect(files.first.path.endsWith('data.zip'), isTrue);
     });

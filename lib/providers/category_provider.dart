@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:mime/mime.dart';
-import 'package:path/path.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:zim/models/entry.dart';
 import 'package:zim/services/file_repository.dart';
+import 'package:zim/utils/design_tokens.dart';
 import 'package:zim/utils/file_utils.dart';
 
 class CategoryProvider extends ChangeNotifier {
@@ -15,30 +15,30 @@ class CategoryProvider extends ChangeNotifier {
   static const FileRepository _repo = FileRepository();
 
   bool loading = false;
-  List<FileSystemEntity> downloads = <FileSystemEntity>[];
+  List<Entry> downloads = <Entry>[];
   List<String> downloadTabs = <String>[];
 
-  List<FileSystemEntity> thumbnailFiles = <FileSystemEntity>[];
+  List<Entry> thumbnailFiles = <Entry>[];
   List<String> thumbnailTabs = <String>[];
 
-  List<FileSystemEntity> nonThumbnailFiles = <FileSystemEntity>[];
+  List<Entry> nonThumbnailFiles = <Entry>[];
   List<String> nonThumbnailTabs = <String>[];
 
-  List<FileSystemEntity> currentFiles = [];
+  List<Entry> currentFiles = [];
 
   bool showHidden = false;
   int sort = 0;
 
-  /// Cached full-device scan (file paths). The walk is expensive and was
-  /// re-run on every category open / search keystroke; we scan once, off the
-  /// UI isolate, and let each category [classify] from this list.
-  List<String>? _scanCache;
+  /// Cached full-device scan. The walk is expensive and was re-run on every
+  /// category open / search keystroke; we scan once, off the UI isolate, and
+  /// let each category [classify] from this list.
+  List<Entry>? _scanCache;
 
-  /// All file paths on the device, scanned once and cached. Pass [refresh] to
+  /// All entries on the device, scanned once and cached. Pass [refresh] to
   /// force a re-scan (pull-to-refresh / returned-to-foreground / hidden toggle).
-  Future<List<String>> allFilePaths({bool refresh = false}) async {
+  Future<List<Entry>> allEntries({bool refresh = false}) async {
     if (!refresh && _scanCache != null) return _scanCache!;
-    _scanCache = await FileUtils.getAllFilePaths(showHidden: showHidden);
+    _scanCache = await _repo.scan(showHidden: showHidden);
     return _scanCache!;
   }
 
@@ -47,12 +47,12 @@ class CategoryProvider extends ChangeNotifier {
   void invalidateScan() => _scanCache = null;
 
   /// File-name search over the cached scan — no filesystem re-walk per query.
-  Future<List<FileSystemEntity>> search(String query) async {
+  Future<List<Entry>> search(String query) async {
     final q = query.toLowerCase();
-    final paths = await allFilePaths();
+    final entries = await allEntries();
     return [
-      for (final path in paths)
-        if (basename(path).toLowerCase().contains(q)) File(path),
+      for (final entry in entries)
+        if (entry.name.toLowerCase().contains(q)) entry,
     ];
   }
 
@@ -74,32 +74,49 @@ class CategoryProvider extends ChangeNotifier {
     return parts.length >= 2 ? parts[parts.length - 2] : '';
   }
 
-  /// Pure classification: returns the files in [paths] matching [type] and the
-  /// set of tab names (parent dirs) they fall under, with 'All' first. No I/O,
-  /// no notify — unit-testable in isolation.
-  static (List<FileSystemEntity>, List<String>) classify(
-    List<String> paths,
+  /// The [FileKind] a category [type] string selects for.
+  static FileKind _kindForType(String type) {
+    switch (type) {
+      case 'application':
+        return FileKind.apk;
+      case 'archive':
+        return FileKind.archive;
+      case 'text':
+        return FileKind.document;
+      case 'image':
+        return FileKind.image;
+      case 'video':
+        return FileKind.video;
+      case 'audio':
+        return FileKind.audio;
+      default:
+        return FileKind.generic;
+    }
+  }
+
+  /// Pure classification: returns the entries matching [type] and the set of tab
+  /// names (parent dirs) they fall under, with 'All' first. No I/O, no notify —
+  /// unit-testable in isolation. Matches on the prefetched [Entry.kind].
+  static (List<Entry>, List<String>) classify(
+    List<Entry> entries,
     String type,
   ) {
-    final matched = <FileSystemEntity>[];
+    final target = _kindForType(type);
+    final matched = <Entry>[];
     final tabs = <String>{'All'};
-    for (final path in paths) {
-      final file = File(path);
-      if (shouldAddFile(file, type)) {
-        matched.add(file);
-        tabs.add(_parentDirName(path));
+    for (final entry in entries) {
+      if (entry.kind == target) {
+        matched.add(entry);
+        tabs.add(_parentDirName(entry.path));
       }
     }
     return (matched, tabs.toList());
   }
 
-  /// Files in [files] that belong to the tab named [label] (i.e. whose
+  /// Entries in [files] that belong to the tab named [label] (i.e. whose
   /// immediate parent directory is [label]). Synchronous, pure — used to drive
   /// per-tab views without re-walking or re-splitting paths in the widget.
-  List<FileSystemEntity> filesForTab(
-    List<FileSystemEntity> files,
-    String label,
-  ) {
+  List<Entry> filesForTab(List<Entry> files, String label) {
     return [
       for (final file in files)
         if (_parentDirName(file.path) == label) file,
@@ -108,7 +125,7 @@ class CategoryProvider extends ChangeNotifier {
 
   Future<void> getFiles(
     String type,
-    List<FileSystemEntity> files,
+    List<Entry> files,
     List<String> tabs, [
     String? dirName,
   ]) async {
@@ -121,17 +138,17 @@ class CategoryProvider extends ChangeNotifier {
       for (final dir in storages) {
         final target = '${dir.path}$dirName';
         if (!Directory(target).existsSync()) continue;
-        for (final file in _repo.list(target, showHidden: true)) {
-          if (FileSystemEntity.isFileSync(file.path)) {
-            files.add(file);
-            tabSet.add(_parentDirName(file.path));
+        for (final entry in _repo.listEntries(target, showHidden: true)) {
+          if (!entry.isDir) {
+            files.add(entry);
+            tabSet.add(_parentDirName(entry.path));
           }
         }
       }
       tabs.addAll(tabSet);
     } else {
-      final paths = await allFilePaths();
-      final (matched, tabList) = classify(paths, type);
+      final entries = await allEntries();
+      final (matched, tabList) = classify(entries, type);
       files.addAll(matched);
       tabs.addAll(tabList);
       currentFiles = files;
@@ -139,43 +156,17 @@ class CategoryProvider extends ChangeNotifier {
     setLoading(false);
   }
 
-  static bool shouldAddFile(File file, String type) {
-    switch (type) {
-      case 'application':
-        return extension(file.path) == '.apk';
-      case 'archive':
-        return FileUtils.isArchive(file.path);
-      case 'text':
-        return [
-          '.pdf',
-          '.epub',
-          '.mobi',
-          '.doc',
-          '.docx',
-          '.json',
-        ].contains(extension(file.path));
-      default:
-        String mimeType = lookupMimeType(file.path) ?? '';
-        return mimeType.split('/')[0] == type;
-    }
-  }
-
-  Future<void> switchCurrentFiles(List list, String label) async {
-    List<FileSystemEntity> l = await compute(getTabImages, [list, label]);
-    currentFiles = l;
+  Future<void> switchCurrentFiles(List<Entry> list, String label) async {
+    currentFiles = await compute(getTabImages, (list, label));
     notifyListeners();
   }
 
-  static Future<List<FileSystemEntity>> getTabImages(List item) async {
-    List items = item[0];
-    String label = item[1];
-    List<FileSystemEntity> files = [];
-    for (var file in items) {
-      if (_parentDirName(file.path) == label) {
-        files.add(file);
-      }
-    }
-    return files;
+  static List<Entry> getTabImages((List<Entry>, String) args) {
+    final (items, label) = args;
+    return [
+      for (final entry in items)
+        if (_parentDirName(entry.path) == label) entry,
+    ];
   }
 
   void setLoading(bool value) {
@@ -187,7 +178,7 @@ class CategoryProvider extends ChangeNotifier {
     SharedPreferences preference = await SharedPreferences.getInstance();
     await preference.setBool('hidden', value);
     showHidden = value;
-    _scanCache = null; // hidden toggle changes which paths the scan returns
+    _scanCache = null; // hidden toggle changes which entries the scan returns
     notifyListeners();
   }
 

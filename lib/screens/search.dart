@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/entry.dart';
 import '../providers/category_provider.dart';
 import '../utils/navigate.dart';
 import '../widgets/dir_item.dart';
@@ -71,7 +71,7 @@ class Search extends SearchDelegate {
       valueListenable: _debounced,
       builder: (BuildContext context, String debouncedQuery, _) {
         if (debouncedQuery.isEmpty) return const SizedBox();
-        return FutureBuilder<List<FileSystemEntity>>(
+        return FutureBuilder<List<Entry>>(
           future: provider.search(debouncedQuery),
           builder: (BuildContext context, AsyncSnapshot snapshot) {
             if (!snapshot.hasData) return const SizedBox();
@@ -85,8 +85,8 @@ class Search extends SearchDelegate {
             return ListView.separated(
               itemCount: snapshot.data.length,
               itemBuilder: (BuildContext context, int index) {
-                FileSystemEntity file = snapshot.data[index];
-                if (file is Directory) {
+                Entry file = snapshot.data[index];
+                if (file.isDir) {
                   return DirectoryItem(
                     popTap: null,
                     file: file,

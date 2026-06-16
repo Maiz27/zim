@@ -1,10 +1,9 @@
-import 'dart:io';
-
 import 'package:flutter_device_apps/flutter_device_apps.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 
+import '../../models/entry.dart';
 import '../../providers/category_provider.dart';
 import '../../utils/design_tokens.dart';
 import '../../widgets/custom_divider.dart';
@@ -66,7 +65,7 @@ class _AppsState extends State<Apps> {
     );
   }
 
-  Widget _apksTab(List<FileSystemEntity> apks) {
+  Widget _apksTab(List<Entry> apks) {
     if (apks.isEmpty) {
       return const EmptyState(
         icon: Icons.android,

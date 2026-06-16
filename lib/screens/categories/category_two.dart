@@ -1,9 +1,8 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 
+import '../../models/entry.dart';
 import '../../providers/category_provider.dart';
 import '../../utils/design_tokens.dart';
 import '../../widgets/custom_divider.dart';
@@ -79,7 +78,7 @@ class _CategoryTwoState extends State<CategoryTwo> {
                                 in provider.nonThumbnailTabs.indexed)
                               Builder(
                                 builder: (context) {
-                                  final List<FileSystemEntity> list =
+                                  final List<Entry> list =
                                       index == 0
                                       ? provider.nonThumbnailFiles
                                       : provider.filesForTab(

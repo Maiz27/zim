@@ -2,15 +2,18 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:zim/utils/file_utils.dart';
+import 'package:zim/models/entry.dart';
+import 'package:zim/services/file_repository.dart';
 
 class CoreProvider extends ChangeNotifier {
   /// Single platform seam for native storage queries.
   static const MethodChannel _storageChannel =
       MethodChannel('dev.maiz.zim/storage');
 
+  static const FileRepository _repo = FileRepository();
+
   List<FileSystemEntity> availableStorage = <FileSystemEntity>[];
-  List<File> recentFiles = <File>[];
+  List<Entry> recentFiles = <Entry>[];
   int totalSpace = 0;
   int freeSpace = 0;
   int totalSDSpace = 0;
@@ -57,10 +60,7 @@ class CoreProvider extends ChangeNotifier {
   }
 
   Future<void> getRecentFiles() async {
-    List<FileSystemEntity> files = await FileUtils.getRecentFiles(
-      showHidden: false,
-    );
-    recentFiles.addAll(files.map((file) => File(file.path)));
+    recentFiles = await _repo.recent(showHidden: false);
     recentLoading = false;
     notifyListeners();
   }

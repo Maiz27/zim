@@ -1,14 +1,12 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:path/path.dart';
 
+import '../models/entry.dart';
 import '../utils/design_tokens.dart';
 import 'entity_popup.dart';
 import 'entity_tile.dart';
 
 class DirectoryItem extends StatelessWidget {
-  final FileSystemEntity file;
+  final Entry file;
   final VoidCallback tap;
   final EntityAction? popTap;
 
@@ -25,7 +23,7 @@ class DirectoryItem extends StatelessWidget {
     return EntityTile(
       onTap: tap,
       onAction: popTap,
-      title: basename(file.path),
+      title: file.name,
       leading: Container(
         height: 40,
         width: 40,

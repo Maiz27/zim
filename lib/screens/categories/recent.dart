@@ -1,8 +1,7 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../models/entry.dart';
 import '../../providers/core_provider.dart';
 import '../../utils/design_tokens.dart';
 import '../../widgets/custom_divider.dart';
@@ -29,10 +28,7 @@ class _RecentState extends State<Recent> {
           if (coreProvider.recentLoading) {
             return const CustomLoader();
           }
-          final files = coreProvider.recentFiles
-              .where((f) => f.existsSync())
-              .take(20)
-              .toList();
+          final files = coreProvider.recentFiles.take(20).toList();
           if (files.isEmpty) {
             return const EmptyState(
               icon: Icons.history,
@@ -47,7 +43,7 @@ class _RecentState extends State<Recent> {
             ),
             itemCount: files.length,
             itemBuilder: (BuildContext context, int index) {
-              final FileSystemEntity file = files[index];
+              final Entry file = files[index];
               return AnimatedEntrance(
                 index: index,
                 child: FileItem(file: file),
