@@ -3,7 +3,6 @@ import 'dart:math';
 
 import 'package:archive/archive_io.dart';
 import 'package:flutter/foundation.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart';
@@ -12,7 +11,6 @@ import 'package:zim/utils/extensions.dart';
 
 class FileUtils {
   static String waPath = '/storage/emulated/0/WhatsApp/Media/.Statuses';
-  static bool decompressing = false;
 
   /// Extensions treated as archives for icons, the Archives category and the
   /// file listing. Broad: includes formats we recognise but cannot extract.
@@ -172,20 +170,12 @@ class FileUtils {
   }
 
   static Future<bool> extractArchive(String source, String destination) async {
-    decompressing = true;
-    if (isExtractableArchive(source)) {
-      try {
-        await extractFileToDisk(
-          source,
-          destination,
-        ).then((value) => {decompressing = false});
-        return true;
-      } catch (e) {
-        debugPrint(e.toString());
-        return false;
-      }
-    } else {
-      Fluttertoast.showToast(msg: 'File Type not supported!');
+    if (!isExtractableArchive(source)) return false;
+    try {
+      await extractFileToDisk(source, destination);
+      return true;
+    } catch (e) {
+      debugPrint(e.toString());
       return false;
     }
   }

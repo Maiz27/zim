@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:zim/utils/design_tokens.dart';
-import 'package:zim/utils/file_utils.dart';
 import 'package:zim/utils/icon_font_helper.dart';
 import 'package:zim/widgets/icon_font.dart';
 
@@ -25,7 +24,7 @@ class DecompressArchiveDialog extends StatefulWidget {
 
 class _DecompressArchiveDialogState extends State<DecompressArchiveDialog> {
   final TextEditingController outputDir = TextEditingController();
-  bool loading = FileUtils.decompressing;
+  bool loading = false;
 
   @override
   void initState() {
