@@ -70,7 +70,7 @@ class Search extends SearchDelegate {
               itemCount: snapshot.data.length,
               itemBuilder: (BuildContext context, int index) {
                 FileSystemEntity file = snapshot.data[index];
-                if (file.toString().split(':')[0] == 'Directory') {
+                if (file is Directory) {
                   return DirectoryItem(
                     popTap: null,
                     file: file,

@@ -44,7 +44,7 @@ class _CategoryOneState extends State<CategoryOne> {
     });
   }
 
-  Widget _mediaTile(int index, dynamic item) {
+  Widget _mediaTile(int index, FileSystemEntity item) {
     final file = File(item.path);
     final mimeType = lookupMimeType(file.path) ?? '';
     return AnimatedEntrance(
