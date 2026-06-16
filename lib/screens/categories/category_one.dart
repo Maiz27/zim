@@ -27,6 +27,7 @@ class _CategoryOneState extends State<CategoryOne> {
   void initState() {
     super.initState();
     SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       switch (widget.title.toLowerCase()) {
         case 'images':
           Provider.of<CategoryProvider>(
@@ -53,7 +54,10 @@ class _CategoryOneState extends State<CategoryOne> {
     return Consumer(
       builder:
           (BuildContext context, CategoryProvider provider, Widget? child) {
-            if (provider.loading) {
+            // Tabs are empty only before the first fetch; classify always
+            // yields at least 'All'. Guard so we never build a 0-tab
+            // controller on the initial frame.
+            if (provider.loading || provider.thumbnailTabs.isEmpty) {
               return const Scaffold(body: CustomLoader());
             }
             final bool isVideo = widget.title.toLowerCase() == 'video';

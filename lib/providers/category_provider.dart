@@ -137,28 +137,35 @@ class CategoryProvider extends ChangeNotifier {
     setLoading(true);
     files.clear();
     tabs.clear();
-    if (dirName != null) {
-      final tabSet = <String>{'All'};
-      final storages = await FileUtils.getStorageList();
-      for (final dir in storages) {
-        final target = '${dir.path}$dirName';
-        if (!Directory(target).existsSync()) continue;
-        for (final entry in _repo.listEntries(target, showHidden: showHidden)) {
-          if (!entry.isDir) {
-            files.add(entry);
-            tabSet.add(_parentDirName(entry.path));
+    try {
+      if (dirName != null) {
+        final tabSet = <String>{'All'};
+        final storages = await FileUtils.getStorageList();
+        for (final dir in storages) {
+          final target = '${dir.path}$dirName';
+          if (!Directory(target).existsSync()) continue;
+          for (final entry in _repo.listEntries(
+            target,
+            showHidden: showHidden,
+          )) {
+            if (!entry.isDir) {
+              files.add(entry);
+              tabSet.add(_parentDirName(entry.path));
+            }
           }
         }
+        tabs.addAll(tabSet);
+      } else {
+        final entries = await allEntries();
+        final (matched, tabList) = classify(entries, type);
+        files.addAll(matched);
+        tabs.addAll(tabList);
+        currentFiles = files;
       }
-      tabs.addAll(tabSet);
-    } else {
-      final entries = await allEntries();
-      final (matched, tabList) = classify(entries, type);
-      files.addAll(matched);
-      tabs.addAll(tabList);
-      currentFiles = files;
+    } finally {
+      // Always clear the spinner, even if the scan/listing threw.
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   void setLoading(bool value) {
