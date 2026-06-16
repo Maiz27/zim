@@ -65,6 +65,19 @@ class CategoryProvider extends ChangeNotifier {
     return (matched, tabs.toList());
   }
 
+  /// Files in [files] that belong to the tab named [label] (i.e. whose
+  /// immediate parent directory is [label]). Synchronous, pure — used to drive
+  /// per-tab views without re-walking or re-splitting paths in the widget.
+  List<FileSystemEntity> filesForTab(
+    List<FileSystemEntity> files,
+    String label,
+  ) {
+    return [
+      for (final file in files)
+        if (_parentDirName(file.path) == label) file,
+    ];
+  }
+
   Future<void> getFiles(
     String type,
     List<FileSystemEntity> files,
@@ -154,8 +167,8 @@ class CategoryProvider extends ChangeNotifier {
 
   Future<void> getHidden() async {
     SharedPreferences preference = await SharedPreferences.getInstance();
-    bool h = preference.getBool('hidden') ?? false;
-    setHidden(h);
+    showHidden = preference.getBool('hidden') ?? false;
+    notifyListeners();
   }
 
   Future<void> setSort(int value) async {
@@ -167,7 +180,7 @@ class CategoryProvider extends ChangeNotifier {
 
   Future<void> getSort() async {
     SharedPreferences preference = await SharedPreferences.getInstance();
-    int h = preference.getInt('sort') ?? 0;
-    setSort(h);
+    sort = preference.getInt('sort') ?? 0;
+    notifyListeners();
   }
 }

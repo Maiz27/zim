@@ -79,35 +79,31 @@ class _CategoryTwoState extends State<CategoryTwo> {
                                 in provider.nonThumbnailTabs.indexed)
                               Builder(
                                 builder: (context) {
-                                  final List items =
-                                      provider.nonThumbnailFiles;
-                                  final List list = [
-                                    for (final file in items)
-                                      if ('${file.path.split('/')[file.path.split('/').length - 2]}' ==
-                                          label)
-                                        file,
-                                  ];
+                                  final List<FileSystemEntity> list =
+                                      index == 0
+                                      ? provider.nonThumbnailFiles
+                                      : provider.filesForTab(
+                                          provider.nonThumbnailFiles,
+                                          label,
+                                        );
                                   return ListView.separated(
-                                padding: const EdgeInsets.only(
-                                  left: AppSpacing.xl,
-                                ),
-                                itemCount: index == 0
-                                    ? provider.nonThumbnailFiles.length
-                                    : list.length,
-                                itemBuilder:
-                                    (BuildContext context, int index2) {
-                                      FileSystemEntity file = index == 0
-                                          ? provider.nonThumbnailFiles[index2]
-                                          : list[index2];
-                                      return AnimatedEntrance(
-                                        index: index2,
-                                        child: FileItem(file: file),
-                                      );
-                                    },
-                                separatorBuilder:
-                                    (BuildContext context, int index) {
-                                      return const CustomDivider();
-                                    },
+                                    padding: const EdgeInsets.only(
+                                      left: AppSpacing.xl,
+                                    ),
+                                    itemCount: list.length,
+                                    itemBuilder:
+                                        (BuildContext context, int index2) {
+                                          return AnimatedEntrance(
+                                            index: index2,
+                                            child: FileItem(
+                                              file: list[index2],
+                                            ),
+                                          );
+                                        },
+                                    separatorBuilder:
+                                        (BuildContext context, int index) {
+                                          return const CustomDivider();
+                                        },
                                   );
                                 },
                               ),
