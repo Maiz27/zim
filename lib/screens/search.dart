@@ -7,6 +7,7 @@ import '../providers/category_provider.dart';
 import '../utils/file_utils.dart';
 import '../utils/navigate.dart';
 import '../widgets/dir_item.dart';
+import '../widgets/empty_state.dart';
 import '../widgets/file/file_item.dart';
 import 'folder.dart';
 
@@ -25,11 +26,6 @@ class Search extends SearchDelegate {
           color: Theme.of(context).primaryTextTheme.titleLarge!.color,
         ),
       ),
-      // inputDecorationTheme: InputDecorationTheme(
-      //   hintStyle: TextStyle(
-      //     color: theme.primaryTextTheme.headline6!.color,
-      //   ),
-      // ),
     );
   }
 
@@ -55,23 +51,22 @@ class Search extends SearchDelegate {
     );
   }
 
-  @override
-  Widget buildResults(BuildContext context) {
+  /// Shared builder for results and suggestions: both run the same query and
+  /// render the same list, so they delegate here to avoid duplication.
+  Widget _buildSearch(BuildContext context) {
+    final provider = Provider.of<CategoryProvider>(context, listen: false);
     return FutureBuilder<List<FileSystemEntity>>(
-      future: FileUtils.searchFiles(
-        query,
-        showHidden: Provider.of<CategoryProvider>(
-          context,
-          listen: false,
-        ).showHidden,
-      ),
+      future: FileUtils.searchFiles(query, showHidden: provider.showHidden),
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         if (snapshot.hasData) {
           if (snapshot.data.isEmpty) {
-            return const Center(child: Text('No file match your query!'));
+            return const EmptyState(
+              icon: Icons.search_off,
+              title: 'No matches',
+              message: 'No file matches your query.',
+            );
           } else {
             return ListView.separated(
-              padding: const EdgeInsets.only(left: 20),
               itemCount: snapshot.data.length,
               itemBuilder: (BuildContext context, int index) {
                 FileSystemEntity file = snapshot.data[index];
@@ -90,18 +85,7 @@ class Search extends SearchDelegate {
                 return FileItem(file: file, popTap: null);
               },
               separatorBuilder: (BuildContext context, int index) {
-                return Stack(
-                  children: <Widget>[
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Container(
-                        height: 1,
-                        color: Theme.of(context).dividerColor,
-                        width: MediaQuery.of(context).size.width - 70,
-                      ),
-                    ),
-                  ],
-                );
+                return const Divider();
               },
             );
           }
@@ -113,54 +97,12 @@ class Search extends SearchDelegate {
   }
 
   @override
+  Widget buildResults(BuildContext context) {
+    return _buildSearch(context);
+  }
+
+  @override
   Widget buildSuggestions(BuildContext context) {
-    var provider = Provider.of<CategoryProvider>(context, listen: false);
-    return FutureBuilder<List<FileSystemEntity>>(
-      future: FileUtils.searchFiles(query, showHidden: provider.showHidden),
-      builder: (BuildContext context, AsyncSnapshot snapshot) {
-        if (snapshot.hasData) {
-          if (snapshot.data.isEmpty) {
-            return const Center(child: Text('No file match your query!'));
-          } else {
-            return ListView.separated(
-              padding: const EdgeInsets.only(left: 20),
-              itemCount: snapshot.data.length,
-              itemBuilder: (BuildContext context, int index) {
-                FileSystemEntity file = snapshot.data[index];
-                if (file.toString().split(':')[0] == 'Directory') {
-                  return DirectoryItem(
-                    popTap: null,
-                    file: file,
-                    tap: () {
-                      Navigate.pushPage(
-                        context,
-                        Folder(title: 'Storage', path: file.path),
-                      );
-                    },
-                  );
-                }
-                return FileItem(file: file, popTap: null);
-              },
-              separatorBuilder: (BuildContext context, int index) {
-                return Stack(
-                  children: <Widget>[
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Container(
-                        height: 1,
-                        color: Theme.of(context).dividerColor,
-                        width: MediaQuery.of(context).size.width - 70,
-                      ),
-                    ),
-                  ],
-                );
-              },
-            );
-          }
-        } else {
-          return const SizedBox();
-        }
-      },
-    );
+    return _buildSearch(context);
   }
 }

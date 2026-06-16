@@ -4,10 +4,12 @@ import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/category_provider.dart';
-import '../../utils/consts.dart';
+import '../../utils/design_tokens.dart';
 import '../../widgets/custom_divider.dart';
 import '../../widgets/custom_loader.dart';
+import '../../widgets/empty_state.dart';
 import '../../widgets/file/file_item.dart';
+import '../../widgets/motion.dart';
 
 class Apps extends StatefulWidget {
   final String title;
@@ -45,18 +47,11 @@ class _AppsState extends State<Apps> {
                 appBar: AppBar(
                   title: const Text('Apps'),
                   bottom: TabBar(
-                    indicatorColor: Theme.of(context).colorScheme.secondary,
-                    labelColor: Theme.of(context).colorScheme.secondary,
-                    unselectedLabelColor: Theme.of(
-                      context,
-                    ).textTheme.bodySmall!.color,
                     isScrollable: false,
-                    tabs: Constants.map<Widget>(['Apks', 'Installed'], (
-                      index,
-                      label,
-                    ) {
-                      return Tab(text: '$label');
-                    }),
+                    tabs: const [
+                      Tab(text: 'Apks'),
+                      Tab(text: 'Installed'),
+                    ],
                     onTap: (val) {
                       setState(() {
                         idx = val;
@@ -67,13 +62,19 @@ class _AppsState extends State<Apps> {
                 body: idx == 0
                     ? Visibility(
                         visible: provider.thumbnailFiles.isNotEmpty,
-                        replacement: const Center(
-                          child: Text('No Files Found'),
+                        replacement: const EmptyState(
+                          icon: Icons.android,
+                          title: 'No APKs yet',
+                          message:
+                              'Installable app packages on your device will appear here.',
                         ),
                         child: ListView.separated(
                           itemCount: provider.currentFiles.length,
                           itemBuilder: (BuildContext context, int index) {
-                            return FileItem(file: provider.currentFiles[index]);
+                            return AnimatedEntrance(
+                              index: index,
+                              child: FileItem(file: provider.currentFiles[index]),
+                            );
                           },
                           separatorBuilder: (BuildContext context, int index) {
                             return const CustomDivider();
@@ -97,26 +98,29 @@ class _AppsState extends State<Apps> {
                                   ),
                             );
                             return ListView.separated(
-                              padding: const EdgeInsets.only(left: 10),
+                              padding: const EdgeInsets.only(left: AppSpacing.md),
                               itemCount: data.length,
                               itemBuilder: (BuildContext context, int index) {
                                 AppInfo app = data[index];
                                 String? packageName = app.packageName;
-                                return ListTile(
-                                  leading: app.iconBytes != null
-                                      ? Image.memory(
-                                          app.iconBytes!,
-                                          height: 40,
-                                          width: 40,
-                                        )
-                                      : null,
-                                  title: Text(app.appName ?? 'Unknown app'),
-                                  subtitle: Text(packageName ?? ''),
-                                  onTap: packageName == null
-                                      ? null
-                                      : () => FlutterDeviceApps.openApp(
-                                          packageName,
-                                        ),
+                                return AnimatedEntrance(
+                                  index: index,
+                                  child: ListTile(
+                                    leading: app.iconBytes != null
+                                        ? Image.memory(
+                                            app.iconBytes!,
+                                            height: 40,
+                                            width: 40,
+                                          )
+                                        : null,
+                                    title: Text(app.appName ?? 'Unknown app'),
+                                    subtitle: Text(packageName ?? ''),
+                                    onTap: packageName == null
+                                        ? null
+                                        : () => FlutterDeviceApps.openApp(
+                                            packageName,
+                                          ),
+                                  ),
                                 );
                               },
                               separatorBuilder:

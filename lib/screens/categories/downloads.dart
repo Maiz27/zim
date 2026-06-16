@@ -3,8 +3,11 @@ import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/category_provider.dart';
+import '../../utils/design_tokens.dart';
 import '../../widgets/custom_divider.dart';
+import '../../widgets/empty_state.dart';
 import '../../widgets/file/file_item.dart';
+import '../../widgets/motion.dart';
 
 class Downloads extends StatefulWidget {
   final String title;
@@ -32,15 +35,22 @@ class _DownloadsState extends State<Downloads> {
               appBar: AppBar(title: Text(widget.title)),
               body: Visibility(
                 visible: provider.downloads.isNotEmpty,
-                replacement: const Center(child: Text('No Files Found')),
+                replacement: const EmptyState(
+                  icon: Icons.download_outlined,
+                  title: 'No downloads yet',
+                  message: 'Files you download will appear here.',
+                ),
                 child: ListView.separated(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.xs,
                   ),
                   itemCount: provider.downloads.length,
                   itemBuilder: (BuildContext context, int index) {
-                    return FileItem(file: provider.downloads[index]);
+                    return AnimatedEntrance(
+                      index: index,
+                      child: FileItem(file: provider.downloads[index]),
+                    );
                   },
                   separatorBuilder: (BuildContext context, int index) {
                     return const CustomDivider();

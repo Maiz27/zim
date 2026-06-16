@@ -5,10 +5,12 @@ import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/category_provider.dart';
-import '../../utils/consts.dart';
+import '../../utils/design_tokens.dart';
 import '../../widgets/custom_divider.dart';
 import '../../widgets/custom_loader.dart';
+import '../../widgets/empty_state.dart';
 import '../../widgets/file/file_item.dart';
+import '../../widgets/motion.dart';
 
 //Category with Icon
 class CategoryTwo extends StatefulWidget {
@@ -45,6 +47,7 @@ class _CategoryTwoState extends State<CategoryTwo> {
   Widget build(BuildContext context) {
     return Consumer(
       builder: (BuildContext context, CategoryProvider provider, Widget? child) {
+        final bool isAudio = widget.title.toLowerCase() == 'audio';
         return provider.loading
             ? const Scaffold(body: CustomLoader())
             : DefaultTabController(
@@ -53,42 +56,41 @@ class _CategoryTwoState extends State<CategoryTwo> {
                   appBar: AppBar(
                     title: Text(widget.title),
                     bottom: TabBar(
-                      indicatorColor: Theme.of(context).colorScheme.secondary,
-                      labelColor: Theme.of(context).colorScheme.secondary,
-                      unselectedLabelColor: Theme.of(
-                        context,
-                      ).textTheme.bodySmall!.color,
-                      isScrollable: provider.nonThumbnailTabs.length < 3
-                          ? false
-                          : true,
-                      tabs: Constants.map<Widget>(provider.nonThumbnailTabs, (
-                        index,
-                        label,
-                      ) {
-                        // print('tabs');
-                        return Tab(text: '$label');
-                      }),
+                      isScrollable: provider.nonThumbnailTabs.length >= 3,
+                      tabs: [
+                        for (final label in provider.nonThumbnailTabs)
+                          Tab(text: label),
+                      ],
                     ),
                   ),
                   body: provider.nonThumbnailFiles.isEmpty
-                      ? const Center(child: Text('No Files Found'))
+                      ? EmptyState(
+                          icon: isAudio
+                              ? Icons.library_music_outlined
+                              : Icons.description_outlined,
+                          title: isAudio ? 'No audio yet' : 'No documents yet',
+                          message: isAudio
+                              ? 'Audio files on your device will appear here.'
+                              : 'Documents on your device will appear here.',
+                        )
                       : TabBarView(
-                          children: Constants.map<Widget>(
-                            provider.nonThumbnailTabs,
-                            (index, label) {
-                              // print(label);
-                              List list = [];
-                              List items = provider.nonThumbnailFiles;
-                              for (var file in items) {
-                                // print('${file.path.split('/')}');
-                                if ('${file.path.split('/')[file.path.split('/').length - 2]}' ==
-                                    label) {
-                                  list.add(file);
-                                }
-                              }
-                              // print(label);
-                              return ListView.separated(
-                                padding: const EdgeInsets.only(left: 20),
+                          children: [
+                            for (final (index, label)
+                                in provider.nonThumbnailTabs.indexed)
+                              Builder(
+                                builder: (context) {
+                                  final List items =
+                                      provider.nonThumbnailFiles;
+                                  final List list = [
+                                    for (final file in items)
+                                      if ('${file.path.split('/')[file.path.split('/').length - 2]}' ==
+                                          label)
+                                        file,
+                                  ];
+                                  return ListView.separated(
+                                padding: const EdgeInsets.only(
+                                  left: AppSpacing.xl,
+                                ),
                                 itemCount: index == 0
                                     ? provider.nonThumbnailFiles.length
                                     : list.length,
@@ -97,15 +99,19 @@ class _CategoryTwoState extends State<CategoryTwo> {
                                       FileSystemEntity file = index == 0
                                           ? provider.nonThumbnailFiles[index2]
                                           : list[index2];
-                                      return FileItem(file: file);
+                                      return AnimatedEntrance(
+                                        index: index2,
+                                        child: FileItem(file: file),
+                                      );
                                     },
                                 separatorBuilder:
                                     (BuildContext context, int index) {
                                       return const CustomDivider();
                                     },
-                              );
-                            },
-                          ),
+                                  );
+                                },
+                              ),
+                          ],
                         ),
                 ),
               );
