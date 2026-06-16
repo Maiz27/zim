@@ -8,7 +8,6 @@ import androidx.annotation.RequiresApi
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
-import java.io.File
 
 class MainActivity: FlutterActivity() {
     private val CHANNEL = "dev.maiz.zim/storage"
@@ -46,15 +45,15 @@ class MainActivity: FlutterActivity() {
 
     @RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
     fun getExternalStorageTotalSpace(): Long{
-        val dirs: Array<File> = getExternalFilesDirs(null)
-        val stat = StatFs(dirs[1].path.split("Android")[0])
+        val sd = getExternalFilesDirs(null).getOrNull(1) ?: return 0
+        val stat = StatFs(sd.path.split("Android")[0])
         return stat.totalBytes
     }
 
     @RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
     fun getExternalStorageFreeSpace(): Long{
-        val dirs: Array<File> = getExternalFilesDirs(null)
-        val stat = StatFs(dirs[1].path.split("Android")[0])
+        val sd = getExternalFilesDirs(null).getOrNull(1) ?: return 0
+        val stat = StatFs(sd.path.split("Android")[0])
         return stat.availableBytes
     }
 }

@@ -196,6 +196,19 @@ void main() {
       expect(f.existsSync(), isFalse);
     });
 
+    test('rejects names that escape the parent directory', () async {
+      final f = File('${tmp.path}/safe.txt')..writeAsStringSync('x');
+      final traversal = throwsA(
+        isA<FileOpException>().having(
+          (e) => e.kind,
+          'kind',
+          FileOpError.unsupported,
+        ),
+      );
+      await expectLater(repo.rename(f, '../evil.txt'), traversal);
+      await expectLater(repo.createDirectory(tmp.path, 'a/b'), traversal);
+    });
+
     test('extract rejects unsupported archive formats', () async {
       await expectLater(
         repo.extract('${tmp.path}/archive.rar', tmp.path),

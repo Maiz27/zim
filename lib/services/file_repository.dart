@@ -88,7 +88,8 @@ class FileRepository {
   }
 
   static void _collect(String path, bool showHidden, List<Entry> out) {
-    for (final entity in Directory(path).listSync()) {
+    // followLinks:false so a symlink cycle can't cause unbounded recursion.
+    for (final entity in Directory(path).listSync(followLinks: false)) {
       final bool hidden = p.basename(entity.path).startsWith('.');
       if (entity is File) {
         if (showHidden || !hidden) out.add(Entry.of(entity));
@@ -133,6 +134,21 @@ class FileRepository {
     return list;
   }
 
+  /// Rejects a user-supplied name that would escape its parent directory
+  /// (empty, `.`/`..`, or containing a path separator).
+  void _validateName(String name) {
+    if (name.isEmpty ||
+        name == '.' ||
+        name == '..' ||
+        name.contains('/') ||
+        name.contains(r'\')) {
+      throw const FileOpException(
+        FileOpError.unsupported,
+        'That name contains characters that are not allowed.',
+      );
+    }
+  }
+
   Future<void> delete(FileSystemEntity entity) async {
     try {
       await entity.delete(recursive: true);
@@ -147,6 +163,7 @@ class FileRepository {
     FileSystemEntity entity,
     String newName,
   ) async {
+    _validateName(newName);
     final target = p.join(p.dirname(entity.path), newName);
     if (FileSystemEntity.typeSync(target) != FileSystemEntityType.notFound) {
       throw const FileOpException(
@@ -164,6 +181,7 @@ class FileRepository {
   /// Creates a subdirectory [name] under [parentPath]. Throws
   /// [FileOpError.alreadyExists] if it is already there.
   Future<Directory> createDirectory(String parentPath, String name) async {
+    _validateName(name);
     final dir = Directory(p.join(parentPath, name));
     if (dir.existsSync()) {
       throw const FileOpException(

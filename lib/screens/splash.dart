@@ -45,7 +45,7 @@ class _SplashState extends State<Splash> {
   }
 
   Future<void> requestPermission() async {
-    if (!await Permission.manageExternalStorage.isDenied) {
+    if (await Permission.manageExternalStorage.isGranted) {
       _goNext();
       return;
     }
