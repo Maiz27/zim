@@ -1,10 +1,10 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/category_provider.dart';
-import '../utils/file_utils.dart';
 import '../utils/navigate.dart';
 import '../widgets/dir_item.dart';
 import '../widgets/empty_state.dart';
@@ -15,6 +15,11 @@ class Search extends SearchDelegate {
   final ThemeData themeData;
 
   Search({Key? key, required this.themeData});
+
+  /// Debounced query: the heavy filter only runs once typing settles, so a
+  /// fast typist doesn't trigger a rebuild + filter on every keystroke.
+  final ValueNotifier<String> _debounced = ValueNotifier<String>('');
+  Timer? _debounce;
 
   @override
   ThemeData appBarTheme(BuildContext context) {
@@ -55,17 +60,28 @@ class Search extends SearchDelegate {
   /// render the same list, so they delegate here to avoid duplication.
   Widget _buildSearch(BuildContext context) {
     final provider = Provider.of<CategoryProvider>(context, listen: false);
-    return FutureBuilder<List<FileSystemEntity>>(
-      future: FileUtils.searchFiles(query, showHidden: provider.showHidden),
-      builder: (BuildContext context, AsyncSnapshot snapshot) {
-        if (snapshot.hasData) {
-          if (snapshot.data.isEmpty) {
-            return const EmptyState(
-              icon: Icons.search_off,
-              title: 'No matches',
-              message: 'No file matches your query.',
-            );
-          } else {
+    // Schedule the debounced query update whenever the live query changes.
+    if (_debounced.value != query) {
+      _debounce?.cancel();
+      _debounce = Timer(const Duration(milliseconds: 300), () {
+        _debounced.value = query;
+      });
+    }
+    return ValueListenableBuilder<String>(
+      valueListenable: _debounced,
+      builder: (BuildContext context, String debouncedQuery, _) {
+        if (debouncedQuery.isEmpty) return const SizedBox();
+        return FutureBuilder<List<FileSystemEntity>>(
+          future: provider.search(debouncedQuery),
+          builder: (BuildContext context, AsyncSnapshot snapshot) {
+            if (!snapshot.hasData) return const SizedBox();
+            if (snapshot.data.isEmpty) {
+              return const EmptyState(
+                icon: Icons.search_off,
+                title: 'No matches',
+                message: 'No file matches your query.',
+              );
+            }
             return ListView.separated(
               itemCount: snapshot.data.length,
               itemBuilder: (BuildContext context, int index) {
@@ -88,10 +104,8 @@ class Search extends SearchDelegate {
                 return const Divider();
               },
             );
-          }
-        } else {
-          return const SizedBox();
-        }
+          },
+        );
       },
     );
   }

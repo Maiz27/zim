@@ -28,6 +28,34 @@ class CategoryProvider extends ChangeNotifier {
 
   bool showHidden = false;
   int sort = 0;
+
+  /// Cached full-device scan (file paths). The walk is expensive and was
+  /// re-run on every category open / search keystroke; we scan once, off the
+  /// UI isolate, and let each category [classify] from this list.
+  List<String>? _scanCache;
+
+  /// All file paths on the device, scanned once and cached. Pass [refresh] to
+  /// force a re-scan (pull-to-refresh / returned-to-foreground / hidden toggle).
+  Future<List<String>> allFilePaths({bool refresh = false}) async {
+    if (!refresh && _scanCache != null) return _scanCache!;
+    _scanCache = await FileUtils.getAllFilePaths(showHidden: showHidden);
+    return _scanCache!;
+  }
+
+  /// Drops the cached device scan so the next category open / search re-walks.
+  /// Wired to pull-to-refresh on Browse.
+  void invalidateScan() => _scanCache = null;
+
+  /// File-name search over the cached scan — no filesystem re-walk per query.
+  Future<List<FileSystemEntity>> search(String query) async {
+    final q = query.toLowerCase();
+    final paths = await allFilePaths();
+    return [
+      for (final path in paths)
+        if (basename(path).toLowerCase().contains(q)) File(path),
+    ];
+  }
+
   Future<void> getDownloads() async {
     await getFiles('downloads', downloads, downloadTabs, 'Download');
   }
@@ -102,11 +130,8 @@ class CategoryProvider extends ChangeNotifier {
       }
       tabs.addAll(tabSet);
     } else {
-      final allFiles = await FileUtils.getAllFiles(showHidden: showHidden);
-      final (matched, tabList) = classify(
-        allFiles.map((file) => file.path).toList(),
-        type,
-      );
+      final paths = await allFilePaths();
+      final (matched, tabList) = classify(paths, type);
       files.addAll(matched);
       tabs.addAll(tabList);
       currentFiles = files;
@@ -162,6 +187,7 @@ class CategoryProvider extends ChangeNotifier {
     SharedPreferences preference = await SharedPreferences.getInstance();
     await preference.setBool('hidden', value);
     showHidden = value;
+    _scanCache = null; // hidden toggle changes which paths the scan returns
     notifyListeners();
   }
 

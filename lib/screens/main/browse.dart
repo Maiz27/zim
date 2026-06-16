@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../providers/category_provider.dart';
 import '../../providers/core_provider.dart';
 import '../../utils/design_tokens.dart';
 import '../../widgets/app_drawer.dart';
@@ -17,6 +18,8 @@ class Browse extends StatefulWidget {
 
 class _BrowseState extends State<Browse> {
   Future<void> refresh(BuildContext context) async {
+    // Drop the cached device scan so categories/search re-walk after a refresh.
+    Provider.of<CategoryProvider>(context, listen: false).invalidateScan();
     await Provider.of<CoreProvider>(context, listen: false).checkSpace();
   }
 
