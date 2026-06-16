@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:zim/utils/design_tokens.dart';
 import 'package:zim/utils/navigate.dart';
 
 import '../icon_font.dart';
+import '../motion.dart';
 
 class CategoryItem extends StatelessWidget {
   final String title;
   final String icon;
   final MaterialColor color;
-  final Widget screen;
+  final WidgetBuilder screen;
 
   const CategoryItem({
     super.key,
@@ -19,42 +21,58 @@ class CategoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        Navigate.pushPage(context, screen);
-      },
-      borderRadius: const BorderRadius.all(Radius.circular(15)),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Expanded(
-            child: AspectRatio(
-              aspectRatio: 1,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: color[200],
-                  borderRadius: const BorderRadius.all(Radius.circular(15)),
-                ),
-                child: Center(
-                  child: IconFont(iconName: icon, size: 26, color: color[700]),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Keep each category's colour identity, but render as a soft tonal tile.
+    final Color tileColor = color.withValues(alpha: 0.16);
+    final Color glyphColor = isDark
+        ? Color.lerp(color, Colors.white, 0.3)!
+        : color.shade700;
+
+    return PressableScale(
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: () {
+            Navigate.pushPage(context, screen(context));
+          },
+          borderRadius: AppRadius.brLg,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Expanded(
+                child: AspectRatio(
+                  aspectRatio: 1,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: tileColor,
+                      borderRadius: AppRadius.brLg,
+                    ),
+                    child: Center(
+                      child: IconFont(
+                        iconName: icon,
+                        size: 26,
+                        color: glyphColor,
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Flexible(
-            child: Text(
-              title,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
+              const SizedBox(height: AppSpacing.sm),
+              Flexible(
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

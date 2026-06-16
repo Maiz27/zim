@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/category_provider.dart';
 import '../utils/consts.dart';
+import '../utils/design_tokens.dart';
 
 class SortSheet extends StatefulWidget {
   const SortSheet({super.key});
@@ -14,23 +15,35 @@ class SortSheet extends StatefulWidget {
 class _SortSheetState extends State<SortSheet> {
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return FractionallySizedBox(
       heightFactor: 0.85,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            const SizedBox(height: 15),
+            const SizedBox(height: AppSpacing.lg),
             Text(
               'Sort by'.toUpperCase(),
-              style: const TextStyle(fontSize: 12.0),
+              style: textTheme.labelMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                letterSpacing: 1,
+              ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSpacing.sm),
             Flexible(
               child: ListView.builder(
                 itemCount: Constants.sortList.length,
                 itemBuilder: (BuildContext context, int index) {
+                  final bool selected =
+                      index ==
+                      Provider.of<CategoryProvider>(
+                        context,
+                        listen: false,
+                      ).sort;
                   return ListTile(
                     onTap: () async {
                       final navigator = Navigator.of(context);
@@ -40,31 +53,23 @@ class _SortSheetState extends State<SortSheet> {
                       ).setSort(index);
                       navigator.pop();
                     },
-                    contentPadding: const EdgeInsets.all(0),
-                    trailing:
-                        index ==
-                            Provider.of<CategoryProvider>(
-                              context,
-                              listen: false,
-                            ).sort
+                    contentPadding: EdgeInsets.zero,
+                    trailing: selected
                         ? Icon(
                             Icons.check,
-                            color: Theme.of(context).primaryColor,
-                            size: 16,
+                            color: colorScheme.primary,
+                            size: 18,
                           )
-                        : const SizedBox(),
+                        : const SizedBox.shrink(),
                     title: Text(
                       '${Constants.sortList[index]}',
-                      style: TextStyle(
-                        fontSize: 14.0,
-                        color:
-                            index ==
-                                Provider.of<CategoryProvider>(
-                                  context,
-                                  listen: false,
-                                ).sort
-                            ? Theme.of(context).primaryColor
-                            : Theme.of(context).textTheme.titleLarge!.color,
+                      style: textTheme.bodyLarge?.copyWith(
+                        color: selected
+                            ? colorScheme.primary
+                            : colorScheme.onSurface,
+                        fontWeight: selected
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                       ),
                     ),
                   );

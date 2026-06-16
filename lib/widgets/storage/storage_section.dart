@@ -4,10 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/core_provider.dart';
+import '../../utils/design_tokens.dart';
 import '../custom_loader.dart';
 import 'storage_item.dart';
-
-int idx = 0;
 
 class StorageSection extends StatefulWidget {
   const StorageSection({super.key});
@@ -17,16 +16,26 @@ class StorageSection extends StatefulWidget {
 }
 
 class _StorageSectionState extends State<StorageSection> {
+  int idx = 0;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 15, 20, 0),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        AppSpacing.lg,
+        AppSpacing.xl,
+        0,
+      ),
       child: Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.1),
-          borderRadius: const BorderRadius.all(Radius.circular(40)),
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
+          borderRadius: AppRadius.brXl,
         ),
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        padding: const EdgeInsets.symmetric(
+          vertical: AppSpacing.lg,
+          horizontal: AppSpacing.sm,
+        ),
         child: Consumer<CoreProvider>(
           builder: (BuildContext context, coreProvider, Widget? child) {
             if (coreProvider.storageLoading) {
@@ -41,7 +50,7 @@ class _StorageSectionState extends State<StorageSection> {
             // Guard against idx pointing past a removed (e.g. SD) volume.
             final safeIdx = idx.clamp(0, coreProvider.availableStorage.length - 1);
             final FileSystemEntity item = coreProvider.availableStorage[safeIdx];
-            final String path = item.path.split('Android')[safeIdx];
+            final String path = item.path.split('Android').first;
 
             final List<String> list = [
               for (int i = 0; i < coreProvider.availableStorage.length; i++)

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../screens/main/browse.dart';
 import '../screens/main/settings.dart';
 import '../screens/main/share.dart';
+import '../utils/design_tokens.dart';
 import '../utils/icon_font_helper.dart';
 import '../utils/navigate.dart';
 import 'icon_font.dart';
@@ -16,16 +17,14 @@ class AppDrawer extends StatelessWidget {
       child: SafeArea(
         child: Column(
           children: [
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xxl),
             Container(
               height: 140,
               width: 140,
-              margin: const EdgeInsets.only(bottom: 32),
+              margin: const EdgeInsets.only(bottom: AppSpacing.xxxl),
               decoration: BoxDecoration(
-                color: Theme.of(
-                  context,
-                ).colorScheme.surface.withValues(alpha: 0.1),
-                borderRadius: const BorderRadius.all(Radius.circular(40)),
+                color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                borderRadius: AppRadius.brXl,
               ),
               clipBehavior: Clip.antiAlias,
               child: const Image(
@@ -33,7 +32,7 @@ class AppDrawer extends StatelessWidget {
                 fit: BoxFit.contain,
               ),
             ),
-            const Divider(height: 2, thickness: 2),
+            const Divider(),
             ListTile(
               leading: const IconFont(
                 size: 30,
@@ -44,7 +43,7 @@ class AppDrawer extends StatelessWidget {
                 Navigate.pushPageReplacement(context, const Browse());
               },
             ),
-            const Divider(height: 2, thickness: 2),
+            const Divider(),
             ListTile(
               leading: const IconFont(
                 size: 30,
@@ -55,7 +54,7 @@ class AppDrawer extends StatelessWidget {
                 Navigate.pushPageReplacement(context, const Share());
               },
             ),
-            const Divider(height: 2, thickness: 2),
+            const Divider(),
             ListTile(
               leading: const IconFont(
                 size: 30,
@@ -66,7 +65,7 @@ class AppDrawer extends StatelessWidget {
                 Navigate.pushPageReplacement(context, const Settings());
               },
             ),
-            const Divider(height: 2, thickness: 2),
+            const Divider(),
           ],
         ),
       ),

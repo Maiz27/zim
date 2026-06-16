@@ -12,7 +12,7 @@ class CustomDivider extends StatelessWidget {
           alignment: Alignment.center,
           child: Container(
             height: 1,
-            color: Theme.of(context).dividerColor,
+            color: Theme.of(context).colorScheme.outlineVariant,
             width: size.width,
           ),
         ),
