@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/core_provider.dart';
+import '../../utils/design_tokens.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/category/category_section.dart';
 import '../../widgets/storage/storage_section.dart';
@@ -24,7 +25,12 @@ class _BrowseState extends State<Browse> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: const Text('Zim', style: TextStyle(fontSize: 25.0)),
+        title: Text(
+          'Zim',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         actions: [
           IconButton(
             tooltip: 'Search',
@@ -45,9 +51,9 @@ class _BrowseState extends State<Browse> {
           top: false,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.only(bottom: 24),
-            child: Column(
-              children: const [StorageSection(), CategorySection()],
+            padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
+            child: const Column(
+              children: [StorageSection(), CategorySection()],
             ),
           ),
         ),
@@ -59,34 +65,3 @@ class _BrowseState extends State<Browse> {
     return double.parse((usedSpace / totalSpace * 100).toStringAsFixed(1));
   }
 }
-
-// class _RecentFiles extends StatelessWidget {
-//   @override
-//   Widget build(BuildContext context) {
-//     return Consumer<CoreProvider>(
-//       builder: (BuildContext context, coreProvider, Widget? child) {
-//         if (coreProvider.recentLoading) {
-//           return SizedBox(height: 150, child: CustomLoader());
-//         }
-//         return ListView.separated(
-//           padding: const EdgeInsets.only(right: 20),
-//           shrinkWrap: true,
-//           physics: const NeverScrollableScrollPhysics(),
-//           itemCount: coreProvider.recentFiles.length > 5
-//               ? 5
-//               : coreProvider.recentFiles.length,
-//           itemBuilder: (BuildContext context, int index) {
-//             FileSystemEntity file = coreProvider.recentFiles[index];
-//             return file.existsSync() ? FileItem(file: file) : const SizedBox();
-//           },
-//           separatorBuilder: (BuildContext context, int index) {
-//             return Container(
-//               height: 1,
-//               color: Theme.of(context).dividerColor,
-//             );
-//           },
-//         );
-//       },
-//     );
-//   }
-// }

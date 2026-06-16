@@ -3,8 +3,8 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:zim/widgets/icon_font.dart';
 
+import '../utils/design_tokens.dart';
 import '../utils/icon_font_helper.dart';
-import '../utils/theme_config.dart';
 
 class About extends StatelessWidget {
   const About({super.key});
@@ -13,6 +13,8 @@ class About extends StatelessWidget {
   Widget build(BuildContext context) {
     var height = MediaQuery.of(context).size.height;
     var url = Uri.parse('https://github.com/Maiz27');
+    final scheme = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
     return Scaffold(
       appBar: AppBar(title: const Text('About')),
       body: Center(
@@ -22,12 +24,10 @@ class About extends StatelessWidget {
             Container(
               height: 200,
               width: 200,
-              margin: const EdgeInsets.only(bottom: 20),
+              margin: const EdgeInsets.only(bottom: AppSpacing.xl),
               decoration: BoxDecoration(
-                color: Theme.of(
-                  context,
-                ).colorScheme.surface.withValues(alpha: 0.1),
-                borderRadius: const BorderRadius.all(Radius.circular(40)),
+                color: scheme.surface.withValues(alpha: 0.1),
+                borderRadius: AppRadius.brXl,
               ),
               child: const Image(
                 image: AssetImage('assets/imgs/logo/512px.png'),
@@ -37,17 +37,15 @@ class About extends StatelessWidget {
               textAlign: TextAlign.center,
               text: TextSpan(
                 text: 'A simple file manager made with Flutter by\n',
-                style: TextStyle(
-                  fontSize: 15,
+                style: text.bodyMedium?.copyWith(
                   letterSpacing: 1,
-                  color: Theme.of(context).textTheme.bodySmall!.color,
+                  color: scheme.onSurfaceVariant,
                 ),
                 children: [
                   TextSpan(
                     text: 'Maged Faiz Ismail',
-                    style: TextStyle(
-                      color: ThemeConfig.accent,
-                      fontSize: 17,
+                    style: text.titleMedium?.copyWith(
+                      color: scheme.primary,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 2,
                     ),
@@ -55,8 +53,8 @@ class About extends StatelessWidget {
                   WidgetSpan(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                        vertical: 8.0,
-                        horizontal: 5.0,
+                        vertical: AppSpacing.sm,
+                        horizontal: AppSpacing.xs,
                       ),
                       child: InkWell(
                         onTap: () async {
@@ -65,7 +63,7 @@ class About extends StatelessWidget {
                         child: IconFont(
                           size: 18,
                           iconName: IconFontHelper.link,
-                          color: ThemeConfig.accent,
+                          color: scheme.primary,
                         ),
                       ),
                     ),
