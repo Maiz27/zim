@@ -166,13 +166,58 @@ Verification after pass 4:
   folder were verified end-to-end (the new dir appeared on disk and in the refreshed
   list). See `docs/ui-screenshots/arch_*.png`.
 
+### Pass 5 — landed (read-path deepening)
+
+The second architecture review (the read/scan path) was implemented in full.
+The device scan no longer runs on the UI isolate, no longer re-walks per
+category/search, and rows no longer stat the disk during `build`.
+
+- Quick wins: `search.dart` uses `file is Directory` (last `toString()`
+  type-sniff gone); typed `_mediaTile`/`_apksTab` params; `path_bar` takes
+  `List<String>`; `category_two` drives document tabs via a pure typed
+  `CategoryProvider.filesForTab`; `getHidden`/`getSort` no longer re-persist
+  what they just read; `FileUtils` lost its `Fluttertoast` + `decompressing`
+  global. `apps.dart` now uses `DefaultTabController`/`TabBarView` (no `idx`).
+- Performance: the recursive walk is offloaded to a background isolate via
+  `compute` (`FileRepository.scanEntries`). `CategoryProvider` scans **once**
+  into a cache, classifies every category from it, and `search()` filters the
+  cache; the search delegate debounces (300ms). Browse pull-to-refresh and the
+  hidden toggle invalidate the cache.
+- Keystone `Entry` value type (`lib/models/entry.dart`): immutable
+  path/name/isDir/size/modified/kind with a pure `kindOf`. The whole read path
+  (scan/category/recent/search/folder lists + FileItem/DirectoryItem/FileIcon)
+  now carries `Entry`. Reads live behind `FileRepository`
+  (`scan`/`recent`/`listEntries`/`sortEntries`); the old `FileUtils` read
+  statics and the orphaned `extensions.dart` were deleted.
+- Per-row sync I/O removed: subtitle, media-grid size label, sort comparator
+  and recent's existence filter read prefetched `Entry` fields instead of
+  `existsSync`/`lengthSync`/`lastModifiedSync`/`statSync`.
+- Cleanup: `SettingsProvider` (show-hidden + sort) extracted from
+  `CategoryProvider` and wired via `ChangeNotifierProxyProvider` so a setting
+  change no longer notifies the file-list consumers; `splash` permission
+  request is bounded (no self-recursion); `CoreProvider.checkSpace`/
+  `getRecentFiles` reset their loading flags in `finally`; `getStorageList` no
+  longer force-unwraps; `storage_section` uses `removeDataDirectory`.
+
+Verification after pass 5:
+
+- `flutter analyze` — clean (No issues found).
+- `flutter test` — 22/22 passing (added Entry.kindOf, sortEntries, scanEntries
+  and the Entry-based classify tests).
+- `flutter build apk --debug` — succeeds.
+- NOT yet emulator-verified: smoke-test the heavy paths (open Images/Documents/
+  Apps, Recent, Search a query, a deep folder) to confirm no UI freeze and that
+  lists/sort/thumbnails are still correct. Note recent is now sorted by
+  modified (was last-accessed, which Android often disables).
+
 ### Outstanding / future ideas (optional)
 
 - Consider a real Material 3 `NavigationRail` for wide screens/tablets (still
   drawer-only today).
-- A thin `Entry` value type (path/name/kind/isDir/size/modified) produced by the
-  repository would remove the last of the raw `dart:io` types from the UI; deferred as it
-  touches everything and the app is small.
+- ~~A thin `Entry` value type produced by the repository~~ — done in pass 5.
+  `folder.dart` still wraps `Entry` back into `File`/`Directory` for the repo's
+  mutation API (`delete`/`rename` take `FileSystemEntity`); could widen those to
+  take `Entry` if more mutation call sites appear.
 - Optionally bundle a brand display font (currently the platform default Roboto with a
   tuned M3 type scale).
 
