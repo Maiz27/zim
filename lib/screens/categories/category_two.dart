@@ -25,6 +25,7 @@ class _CategoryTwoState extends State<CategoryTwo> {
   void initState() {
     super.initState();
     SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       switch (widget.title.toLowerCase()) {
         case 'audio':
           Provider.of<CategoryProvider>(
@@ -47,7 +48,9 @@ class _CategoryTwoState extends State<CategoryTwo> {
     return Consumer(
       builder: (BuildContext context, CategoryProvider provider, Widget? child) {
         final bool isAudio = widget.title.toLowerCase() == 'audio';
-        return provider.loading
+        // Tabs are empty only before the first fetch; classify always yields
+        // at least 'All'. Guard so we never build a 0-tab controller.
+        return provider.loading || provider.nonThumbnailTabs.isEmpty
             ? const Scaffold(body: CustomLoader())
             : DefaultTabController(
                 length: provider.nonThumbnailTabs.length,

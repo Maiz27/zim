@@ -23,6 +23,7 @@ class _ArchivesState extends State<Archives> {
   void initState() {
     super.initState();
     SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       Provider.of<CategoryProvider>(
         context,
         listen: false,

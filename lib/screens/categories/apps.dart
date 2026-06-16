@@ -33,6 +33,7 @@ class _AppsState extends State<Apps> {
       includeIcons: true,
     );
     SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       Provider.of<CategoryProvider>(
         context,
         listen: false,
