@@ -1,12 +1,11 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
+import 'package:zim/utils/design_tokens.dart';
 import 'package:zim/utils/file_utils.dart';
 import 'package:zim/utils/icon_font_helper.dart';
 import 'package:zim/widgets/icon_font.dart';
 
+import '../../services/file_repository.dart';
 import '../../utils/dialogs.dart';
-import '../../utils/theme_config.dart';
 import '../custom_alert.dart';
 import 'dialog_actions.dart';
 
@@ -43,84 +42,85 @@ class _DecompressArchiveDialogState extends State<DecompressArchiveDialog> {
   Future<void> _submit() async {
     if (loading) return;
     setState(() => loading = true);
-    if (!Directory(outputDir.text).existsSync()) {
-      try {
-        await Directory(outputDir.text).create(recursive: true);
-      } catch (e) {
-        if (e.toString().contains('Permission denied')) {
-          Dialogs.showToast('Cannot write to this Storage device!');
-        }
-      }
-    }
-    final success =
-        await FileUtils.extractArchive(widget.path, outputDir.text);
-    if (!mounted) return;
-    if (success) {
+    try {
+      await const FileRepository().extract(widget.path, outputDir.text);
+      if (!mounted) return;
       Navigator.pop(context);
       Dialogs.showToast('Archive decompressed Successfully');
-    } else {
+    } on FileOpException catch (e) {
+      if (!mounted) return;
+      Dialogs.showToast(e.message);
       setState(() => loading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final archiveColors =
+        FilePalette.of(FileKind.archive, theme.brightness);
     return CustomAlert(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(height: 8),
-            const Text(
+            const SizedBox(height: AppSpacing.sm),
+            Text(
               'Decompress Archive',
               textAlign: TextAlign.center,
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: theme.textTheme.titleLarge,
             ),
-            const SizedBox(height: 20),
-            IconFont(
-              iconName: IconFontHelper.archive,
-              color: Colors.purple[700],
-              size: 25,
+            const SizedBox(height: AppSpacing.xl),
+            Center(
+              child: Container(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: archiveColors.container,
+                  borderRadius: AppRadius.brMd,
+                ),
+                child: IconFont(
+                  iconName: IconFontHelper.archive,
+                  color: archiveColors.icon,
+                  size: 25,
+                ),
+              ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSpacing.md),
             Text(
               widget.path.split('/').last,
               softWrap: true,
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                letterSpacing: 2,
-              ),
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(letterSpacing: 2),
             ),
-            const SizedBox(height: 24),
-            const Text(
+            const SizedBox(height: AppSpacing.xxl),
+            Text(
               'Output Directory:',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: theme.textTheme.titleMedium,
             ),
             TextField(
               controller: outputDir,
               keyboardType: TextInputType.text,
-              cursorColor: ThemeConfig.primary,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             if (loading)
               const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
+                padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
                 child: Center(child: CircularProgressIndicator()),
               ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             DialogActions(
               confirmLabel: 'Decompress',
               confirmEnabled: !loading,
               onCancel: () => Navigator.pop(context),
               onConfirm: _submit,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
           ],
         ),
       ),

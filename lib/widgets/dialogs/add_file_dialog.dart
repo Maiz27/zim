@@ -1,8 +1,7 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:zim/utils/theme_config.dart';
+import 'package:zim/utils/design_tokens.dart';
 
+import '../../services/file_repository.dart';
 import '../../utils/dialogs.dart';
 import '../custom_alert.dart';
 import 'dialog_actions.dart';
@@ -29,50 +28,43 @@ class _AddFileDialogState extends State<AddFileDialog> {
   Widget build(BuildContext context) {
     return CustomAlert(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const SizedBox(height: 8),
-            const Text(
+            const SizedBox(height: AppSpacing.sm),
+            Text(
               'Add New Folder',
               textAlign: TextAlign.center,
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: Theme.of(context).textTheme.titleLarge,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl),
             TextField(
               controller: name,
               keyboardType: TextInputType.text,
               autofocus: true,
-              cursorColor: ThemeConfig.primary,
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: AppSpacing.xxxl),
             DialogActions(
               confirmLabel: 'Create',
               onCancel: () => Navigator.pop(context),
               onConfirm: () async {
                 if (name.text.isEmpty) return;
-                final target = Directory('${widget.path}/${name.text}');
-                if (target.existsSync()) {
-                  Dialogs.showToast('A Folder with that name already exists!');
-                } else {
-                  try {
-                    await target.create();
-                  } catch (e) {
-                    if (e.toString().contains('Permission denied')) {
-                      Dialogs.showToast(
-                        'Cannot write to this Storage device!',
-                      );
-                    }
-                  }
+                try {
+                  await const FileRepository().createDirectory(
+                    widget.path,
+                    name.text,
+                  );
+                } on FileOpException catch (e) {
+                  Dialogs.showToast(e.message);
                 }
                 if (!context.mounted) return;
                 Navigator.pop(context);
               },
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
           ],
         ),
       ),

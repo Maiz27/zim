@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:zim/utils/design_tokens.dart';
 
 /// Themed wrapper around [Dialog] used by the file-management dialogs.
 ///
@@ -18,13 +19,8 @@ class CustomAlert extends StatelessWidget {
     return BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 0.5, sigmaY: 0.5),
       child: Dialog(
-        insetPadding: const EdgeInsets.symmetric(
-          horizontal: 24,
-          vertical: 24,
-        ),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(10)),
-        ),
+        insetPadding: const EdgeInsets.all(AppSpacing.xxl),
+        shape: const RoundedRectangleBorder(borderRadius: AppRadius.brXl),
         clipBehavior: Clip.antiAlias,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),

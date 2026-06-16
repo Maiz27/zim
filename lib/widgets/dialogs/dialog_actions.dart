@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-import '../../utils/theme_config.dart';
+import 'package:zim/utils/design_tokens.dart';
 
 /// Confirm / Cancel button row used by the file-management dialogs.
 ///
@@ -24,39 +23,19 @@ class DialogActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foreground =
-        Theme.of(context).textTheme.bodyMedium?.color ?? ThemeConfig.darkBg;
-
     return Row(
       children: [
         Expanded(
           child: OutlinedButton(
             onPressed: onCancel,
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              side: BorderSide(color: foreground.withValues(alpha: 0.4)),
-            ),
-            child: Text(cancelLabel, style: TextStyle(color: foreground)),
+            child: Text(cancelLabel),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: AppSpacing.md),
         Expanded(
-          child: ElevatedButton(
+          child: FilledButton(
             onPressed: confirmEnabled ? onConfirm : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: ThemeConfig.primary,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(
-              confirmLabel,
-              style: TextStyle(color: ThemeConfig.darkBg),
-            ),
+            child: Text(confirmLabel),
           ),
         ),
       ],

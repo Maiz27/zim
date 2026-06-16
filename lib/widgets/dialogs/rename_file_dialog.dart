@@ -2,8 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path_lib;
-import 'package:zim/utils/theme_config.dart';
+import 'package:zim/utils/design_tokens.dart';
 
+import '../../services/file_repository.dart';
 import '../../utils/dialogs.dart';
 import '../custom_alert.dart';
 import 'dialog_actions.dart';
@@ -33,35 +34,15 @@ class _RenameFileDialogState extends State<RenameFileDialog> {
     super.dispose();
   }
 
-  String _replaceBasename(String newName) {
-    final dirname = path_lib.dirname(widget.path);
-    return path_lib.join(dirname, newName);
-  }
-
   Future<void> _submit() async {
     if (name.text.isEmpty) return;
-    final newPath = _replaceBasename(name.text);
-    final exists = widget.type == 'file'
-        ? File(newPath).existsSync()
-        : Directory(newPath).existsSync();
-    if (exists) {
-      Dialogs.showToast(
-        widget.type == 'file'
-            ? 'A File with that name already exists!'
-            : 'A Folder with that name already exists!',
-      );
-    } else {
-      try {
-        if (widget.type == 'file') {
-          await File(widget.path).rename(newPath);
-        } else {
-          await Directory(widget.path).rename(newPath);
-        }
-      } catch (e) {
-        if (e.toString().contains('Permission denied')) {
-          Dialogs.showToast('Cannot write to this device!');
-        }
-      }
+    final entity = widget.type == 'file'
+        ? File(widget.path)
+        : Directory(widget.path);
+    try {
+      await const FileRepository().rename(entity, name.text);
+    } on FileOpException catch (e) {
+      Dialogs.showToast(e.message);
     }
     if (!mounted) return;
     Navigator.pop(context);
@@ -71,32 +52,31 @@ class _RenameFileDialogState extends State<RenameFileDialog> {
   Widget build(BuildContext context) {
     return CustomAlert(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const SizedBox(height: 8),
-            const Text(
+            const SizedBox(height: AppSpacing.sm),
+            Text(
               'Rename Item',
               textAlign: TextAlign.center,
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: Theme.of(context).textTheme.titleLarge,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl),
             TextField(
               controller: name,
               keyboardType: TextInputType.text,
               autofocus: true,
-              cursorColor: ThemeConfig.primary,
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: AppSpacing.xxxl),
             DialogActions(
               confirmLabel: 'Rename',
               onCancel: () => Navigator.pop(context),
               onConfirm: _submit,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
           ],
         ),
       ),
