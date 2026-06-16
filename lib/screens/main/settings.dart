@@ -5,7 +5,7 @@ import 'package:zim/utils/icon_font_helper.dart';
 import 'package:zim/widgets/icon_font.dart';
 
 import '../../providers/app_provider.dart';
-import '../../providers/category_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../utils/navigate.dart';
 import '../../widgets/app_drawer.dart';
 import '../about.dart';
@@ -34,8 +34,8 @@ class Settings extends StatelessWidget {
             const _SectionLabel('Files'),
             _SettingsCard(
               children: [
-                Consumer<CategoryProvider>(
-                  builder: (context, category, _) => SwitchListTile.adaptive(
+                Consumer<SettingsProvider>(
+                  builder: (context, settings, _) => SwitchListTile.adaptive(
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.lg,
                       vertical: AppSpacing.xs,
@@ -46,9 +46,9 @@ class Settings extends StatelessWidget {
                     ),
                     title: const Text('Show hidden files'),
                     subtitle: const Text('Display files and folders that start with a dot'),
-                    value: category.showHidden,
+                    value: settings.showHidden,
                     onChanged: (value) =>
-                        context.read<CategoryProvider>().setHidden(value),
+                        context.read<SettingsProvider>().setHidden(value),
                   ),
                 ),
               ],

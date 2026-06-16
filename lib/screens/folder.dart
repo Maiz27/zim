@@ -5,7 +5,7 @@ import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
 import '../models/entry.dart';
-import '../providers/category_provider.dart';
+import '../providers/settings_provider.dart';
 import '../services/file_repository.dart';
 import '../utils/design_tokens.dart';
 import '../utils/dialogs.dart';
@@ -48,11 +48,11 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
   }
 
   Future<void> getFiles() async {
-    final provider = Provider.of<CategoryProvider>(context, listen: false);
-    showHidden = provider.showHidden;
+    final settings = Provider.of<SettingsProvider>(context, listen: false);
+    showHidden = settings.showHidden;
     try {
       final listed = _repo.listEntries(path, showHidden: showHidden);
-      files = FileRepository.sortEntries(listed, provider.sort);
+      files = FileRepository.sortEntries(listed, settings.sort);
     } on FileOpException catch (e) {
       files = <Entry>[];
       if (!mounted) return;

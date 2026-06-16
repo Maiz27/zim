@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/category_provider.dart';
+import '../providers/settings_provider.dart';
 import '../utils/consts.dart';
 import '../utils/design_tokens.dart';
 
@@ -40,14 +40,14 @@ class _SortSheetState extends State<SortSheet> {
                 itemBuilder: (BuildContext context, int index) {
                   final bool selected =
                       index ==
-                      Provider.of<CategoryProvider>(
+                      Provider.of<SettingsProvider>(
                         context,
                         listen: false,
                       ).sort;
                   return ListTile(
                     onTap: () async {
                       final navigator = Navigator.of(context);
-                      await Provider.of<CategoryProvider>(
+                      await Provider.of<SettingsProvider>(
                         context,
                         listen: false,
                       ).setSort(index);

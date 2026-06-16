@@ -1,17 +1,11 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zim/models/entry.dart';
 import 'package:zim/services/file_repository.dart';
 import 'package:zim/utils/design_tokens.dart';
 import 'package:zim/utils/file_utils.dart';
 
 class CategoryProvider extends ChangeNotifier {
-  CategoryProvider() {
-    getHidden();
-    getSort();
-  }
-
   static const FileRepository _repo = FileRepository();
 
   bool loading = false;
@@ -26,8 +20,10 @@ class CategoryProvider extends ChangeNotifier {
 
   List<Entry> currentFiles = [];
 
+  /// Synced from [SettingsProvider] via a ChangeNotifierProxyProvider; not
+  /// persisted here. Changing it invalidates the scan cache without notifying
+  /// the file-list consumers (they refetch on their next open).
   bool showHidden = false;
-  int sort = 0;
 
   /// Cached full-device scan. The walk is expensive and was re-run on every
   /// category open / search keystroke; we scan once, off the UI isolate, and
@@ -45,6 +41,15 @@ class CategoryProvider extends ChangeNotifier {
   /// Drops the cached device scan so the next category open / search re-walks.
   /// Wired to pull-to-refresh on Browse.
   void invalidateScan() => _scanCache = null;
+
+  /// Syncs the show-hidden preference from [SettingsProvider]. Invalidates the
+  /// scan cache on change but does NOT notify — file lists refetch on their
+  /// next open, so a settings toggle shouldn't rebuild them mid-scroll.
+  void applyShowHidden(bool value) {
+    if (showHidden == value) return;
+    showHidden = value;
+    _scanCache = null;
+  }
 
   /// File-name search over the cached scan — no filesystem re-walk per query.
   Future<List<Entry>> search(String query) async {
@@ -171,33 +176,6 @@ class CategoryProvider extends ChangeNotifier {
 
   void setLoading(bool value) {
     loading = value;
-    notifyListeners();
-  }
-
-  Future<void> setHidden(bool value) async {
-    SharedPreferences preference = await SharedPreferences.getInstance();
-    await preference.setBool('hidden', value);
-    showHidden = value;
-    _scanCache = null; // hidden toggle changes which entries the scan returns
-    notifyListeners();
-  }
-
-  Future<void> getHidden() async {
-    SharedPreferences preference = await SharedPreferences.getInstance();
-    showHidden = preference.getBool('hidden') ?? false;
-    notifyListeners();
-  }
-
-  Future<void> setSort(int value) async {
-    SharedPreferences preference = await SharedPreferences.getInstance();
-    await preference.setInt('sort', value);
-    sort = value;
-    notifyListeners();
-  }
-
-  Future<void> getSort() async {
-    SharedPreferences preference = await SharedPreferences.getInstance();
-    sort = preference.getInt('sort') ?? 0;
     notifyListeners();
   }
 }
