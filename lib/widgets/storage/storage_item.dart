@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 
 import '../../screens/folder.dart';
-import '../../utils/consts.dart';
+import '../../utils/design_tokens.dart';
 import '../../utils/file_utils.dart';
 import '../../utils/navigate.dart';
-import '../../utils/theme_config.dart';
+import '../motion.dart';
 
 class StorageItem extends StatelessWidget {
   final double percent;
@@ -13,8 +13,8 @@ class StorageItem extends StatelessWidget {
   final String path;
   final int usedSpace;
   final int freeSpace;
-  final Function onItemChange;
-  final List items;
+  final ValueChanged<String?> onItemChange;
+  final List<String> items;
 
   const StorageItem({
     super.key,
@@ -29,155 +29,178 @@ class StorageItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var deviceHeight = MediaQuery.of(context).size.height;
-    var deviceWidth = MediaQuery.of(context).size.width;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
-    return InkWell(
-      onTap: (() {
-        Navigate.pushPage(context, Folder(path: path, title: title));
-      }),
-      child: Column(
-        children: [
-          DropdownButton(
-            value: title,
-            items: Constants.map(
-              items,
-              (index, value) {
-                return DropdownMenuItem(
-                  value: value,
-                  child: Text(value,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 2,
-                        color: ThemeConfig.primary,
-                      )),
-                );
-              },
-            ),
-            onChanged: ((value) {
-              onItemChange(value);
-            }),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: CircularPercentIndicator(
-              progressColor: Theme.of(context).progressIndicatorTheme.color,
-              radius: deviceWidth * 0.3,
-              lineWidth: 25,
-              percent: percent / 100,
-              animation: true,
-              animationDuration: 1000,
-              backgroundColor: Color(Theme.of(context)
-                  .progressIndicatorTheme
-                  .circularTrackColor!
-                  .value),
-              circularStrokeCap: CircularStrokeCap.round,
-              center: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+    return PressableScale(
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: () {
+            Navigate.pushPage(context, Folder(path: path, title: title));
+          },
+          borderRadius: AppRadius.brLg,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Dial size is capped so it never dwarfs the rest of the card on
+              // tablets or oversized phones.
+              final double dialRadius =
+                  (constraints.maxWidth * 0.32).clamp(70.0, 120.0);
+
+              return Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    '$percent%',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 45,
-                      letterSpacing: 1,
+                  DropdownButton<String>(
+                    value: items.contains(title) ? title : null,
+                    items: [
+                      for (final value in items)
+                        DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(
+                            value,
+                            style: textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 2,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                        ),
+                    ],
+                    onChanged: onItemChange,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                    child: CircularPercentIndicator(
+                      progressColor: colorScheme.primary,
+                      radius: dialRadius,
+                      lineWidth: 22,
+                      percent: (percent / 100).clamp(0.0, 1.0),
+                      animation: true,
+                      animationDuration: 1000,
+                      backgroundColor: colorScheme.surfaceContainerHighest,
+                      circularStrokeCap: CircularStrokeCap.round,
+                      center: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                '$percent%',
+                                style: textTheme.headlineMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1,
+                                  color: colorScheme.onSurface,
+                                ),
+                              ),
+                            ),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'Used',
+                                style: textTheme.titleMedium?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                  const Text(
-                    'Used',
-                    style: TextStyle(
-                      // fontWeight: FontWeight.bold,
-                      fontSize: 35,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        Expanded(
+                          child: _LegendTile(
+                            color: colorScheme.primary,
+                            label: 'Used',
+                            value: FileUtils.formatBytes(usedSpace, 2),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: _LegendTile(
+                            color: colorScheme.surfaceContainerHighest,
+                            label: 'Free',
+                            value: FileUtils.formatBytes(freeSpace, 2),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
-              ),
-            ),
+              );
+            },
           ),
-          SizedBox(
-            height: deviceHeight * 0.08,
-            width: deviceWidth * 0.9,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      height: 30,
-                      width: 30,
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.all(
-                          Radius.circular(10),
-                        ),
-                        color: ThemeConfig.primary,
-                      ),
-                    ),
-                    const SizedBox(
-                      width: 15,
-                    ),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        const Text(
-                          'Used',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                        Text(
-                          '${FileUtils.formatBytes(usedSpace, 2)} ',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Container(
-                      height: 30,
-                      width: 30,
-                      decoration: BoxDecoration(
-                          borderRadius: const BorderRadius.all(
-                            Radius.circular(10),
-                          ),
-                          color: Theme.of(context)
-                              .progressIndicatorTheme
-                              .circularTrackColor),
-                    ),
-                    const SizedBox(
-                      width: 15,
-                    ),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        const Text(
-                          'Free',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                        Text(
-                          '${FileUtils.formatBytes(freeSpace, 2)} ',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
+    );
+  }
+}
+
+class _LegendTile extends StatelessWidget {
+  final Color? color;
+  final String label;
+  final String value;
+
+  const _LegendTile({
+    required this.color,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          height: 28,
+          width: 28,
+          decoration: BoxDecoration(
+            borderRadius: AppRadius.brSm,
+            color: color,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Flexible(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              Text(
+                value,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

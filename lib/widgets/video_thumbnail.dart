@@ -1,7 +1,9 @@
-// import 'dart:io';
-
 import 'package:flutter/material.dart';
-// import 'package:video_player/video_player.dart';
+
+import '../utils/design_tokens.dart';
+
+/// Edge length of the list-row video thumbnail (matches the file-icon chip).
+const double _kThumbSize = 40;
 
 class VideoThumbnail extends StatefulWidget {
   final String path;
@@ -13,33 +15,18 @@ class VideoThumbnail extends StatefulWidget {
 
 class _VideoThumbnailState extends State<VideoThumbnail>
     with AutomaticKeepAliveClientMixin {
-  String thumb = '';
-  bool loading = true;
-  // late VideoPlayerController _controller;
-
-  @override
-  // void initState() {
-  //   super.initState();
-  //   _controller = VideoPlayerController.file(File(widget.path))
-  //     ..initialize().then((_) {
-  //       if (mounted) {
-  //         setState(() {
-  //           loading = false;
-  //         }); //when your thumbnail will show.
-  //       }
-  //     });
-  // }
-
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return Image.asset(
-      'assets/imgs/video-placeholder.png',
-      height: 40,
-      width: 40,
-      fit: BoxFit.cover,
+    return ClipRRect(
+      borderRadius: AppRadius.brMd,
+      child: Image.asset(
+        'assets/imgs/video-placeholder.png',
+        height: _kThumbSize,
+        width: _kThumbSize,
+        fit: BoxFit.cover,
+      ),
     );
-    // : VideoPlayer(_controller);
   }
 
   @override

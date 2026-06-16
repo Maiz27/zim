@@ -1,60 +1,64 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../utils/theme_config.dart';
-
+/// Holds app-wide UI state: the active [ThemeMode] (System / Light / Dark) and
+/// the navigator/key handles used for global navigation and full rebuilds.
 class AppProvider extends ChangeNotifier {
   AppProvider() {
-    checkTheme();
+    _loadThemeMode();
   }
 
-  ThemeData theme = ThemeConfig.lightTheme;
+  static const String _prefsKey = 'theme_mode';
+
+  ThemeMode _themeMode = ThemeMode.system;
+  ThemeMode get themeMode => _themeMode;
+
   Key key = UniqueKey();
   GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-  void setKey(value) {
+  void setKey(Key value) {
     key = value;
     notifyListeners();
   }
 
-  void setNavigatorKey(value) {
+  void setNavigatorKey(GlobalKey<NavigatorState> value) {
     navigatorKey = value;
     notifyListeners();
   }
 
-  void setTheme(value, c) {
-    theme = value;
-    SharedPreferences.getInstance().then((preference) {
-      preference.setString('theme', c).then((val) {
-        SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
-            overlays: SystemUiOverlay.values);
-        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-          statusBarColor: ThemeConfig.primary,
-          statusBarIconBrightness: Brightness.light,
-        ));
-      });
-    });
+  Future<void> _loadThemeMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    _themeMode = _decode(prefs.getString(_prefsKey));
     notifyListeners();
   }
 
-  ThemeData getTheme(value) {
-    return theme;
+  Future<void> setThemeMode(ThemeMode mode) async {
+    if (mode == _themeMode) return;
+    _themeMode = mode;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefsKey, _encode(mode));
   }
 
-  Future<ThemeData> checkTheme() async {
-    SharedPreferences preference = await SharedPreferences.getInstance();
-    ThemeData t;
-    String? r = preference.getString('theme') ?? 'light';
-
-    if (r == 'light') {
-      t = ThemeConfig.lightTheme;
-      setTheme(ThemeConfig.lightTheme, 'light');
-    } else {
-      t = ThemeConfig.darkTheme;
-      setTheme(ThemeConfig.darkTheme, 'dark');
+  static ThemeMode _decode(String? value) {
+    switch (value) {
+      case 'light':
+        return ThemeMode.light;
+      case 'dark':
+        return ThemeMode.dark;
+      default:
+        return ThemeMode.system;
     }
+  }
 
-    return t;
+  static String _encode(ThemeMode mode) {
+    switch (mode) {
+      case ThemeMode.light:
+        return 'light';
+      case ThemeMode.dark:
+        return 'dark';
+      case ThemeMode.system:
+        return 'system';
+    }
   }
 }

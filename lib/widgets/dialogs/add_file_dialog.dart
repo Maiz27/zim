@@ -1,10 +1,10 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:zim/utils/theme_config.dart';
+import 'package:zim/utils/design_tokens.dart';
 
+import '../../services/file_repository.dart';
 import '../../utils/dialogs.dart';
 import '../custom_alert.dart';
+import 'dialog_actions.dart';
 
 class AddFileDialog extends StatefulWidget {
   final String path;
@@ -19,102 +19,53 @@ class _AddFileDialogState extends State<AddFileDialog> {
   final TextEditingController name = TextEditingController();
 
   @override
+  void dispose() {
+    name.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return CustomAlert(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const SizedBox(height: 15),
-            const Text(
+            const SizedBox(height: AppSpacing.sm),
+            Text(
               'Add New Folder',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleLarge,
             ),
-            const SizedBox(height: 25),
+            const SizedBox(height: AppSpacing.xl),
             TextField(
               controller: name,
               keyboardType: TextInputType.text,
+              autofocus: true,
             ),
-            const SizedBox(height: 40),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                SizedBox(
-                  height: 40,
-                  width: 130,
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ButtonStyle(
-                      backgroundColor:
-                          MaterialStateProperty.all<Color>(Colors.white),
-                      shape: MaterialStateProperty.all(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(5.0),
-                        ),
-                      ),
-                      side: MaterialStateProperty.all(
-                        BorderSide(
-                          color: ThemeConfig.darkBg,
-                        ),
-                      ),
-                    ),
-                    child: Text(
-                      'Cancel',
-                      style: TextStyle(
-                        color: ThemeConfig.darkBg,
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  height: 40,
-                  width: 130,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      if (name.text.isNotEmpty) {
-                        if (!Directory('${widget.path}/${name.text}')
-                            .existsSync()) {
-                          await Directory('${widget.path}/${name.text}')
-                              .create()
-                              .catchError((e) {
-                            // print(e.toString());
-                            if (e.toString().contains('Permission denied')) {
-                              Dialogs.showToast(
-                                  'Cannot write to this Storage  device!');
-                            }
-                          });
-                        } else {
-                          Dialogs.showToast(
-                              'A Folder with that name already exists!');
-                        }
-                        if (!mounted) return;
-                        Navigator.pop(context);
-                      }
-                    },
-                    style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all<Color>(
-                        ThemeConfig.primary,
-                      ),
-                      shape: MaterialStateProperty.all(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(5.0),
-                        ),
-                      ),
-                    ),
-                    child: Text(
-                      'Create',
-                      style: TextStyle(
-                        color: ThemeConfig.darkBg,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            const SizedBox(height: AppSpacing.xxxl),
+            DialogActions(
+              confirmLabel: 'Create',
+              onCancel: () => Navigator.pop(context),
+              onConfirm: () async {
+                if (name.text.isEmpty) return;
+                try {
+                  await const FileRepository().createDirectory(
+                    widget.path,
+                    name.text,
+                  );
+                  if (!context.mounted) return;
+                  Navigator.pop(context);
+                } on FileOpException catch (e) {
+                  // Keep the dialog open so the user can retry (e.g. rename).
+                  Dialogs.showToast(e.message);
+                }
+              },
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.sm),
           ],
         ),
       ),

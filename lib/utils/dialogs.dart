@@ -1,7 +1,7 @@
 import 'package:fluttertoast/fluttertoast.dart';
 
 class Dialogs {
-  static showToast(value) {
+  static void showToast(String value) {
     Fluttertoast.showToast(
       msg: value,
       toastLength: Toast.LENGTH_SHORT,

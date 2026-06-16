@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../providers/category_provider.dart';
 import '../../providers/core_provider.dart';
+import '../../utils/design_tokens.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/category/category_section.dart';
 import '../../widgets/storage/storage_section.dart';
@@ -15,7 +17,9 @@ class Browse extends StatefulWidget {
 }
 
 class _BrowseState extends State<Browse> {
-  refresh(BuildContext context) async {
+  Future<void> refresh(BuildContext context) async {
+    // Drop the cached device scan so categories/search re-walk after a refresh.
+    Provider.of<CategoryProvider>(context, listen: false).invalidateScan();
     await Provider.of<CoreProvider>(context, listen: false).checkSpace();
   }
 
@@ -24,9 +28,11 @@ class _BrowseState extends State<Browse> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: const Text(
+        title: Text(
           'Zim',
-          style: TextStyle(fontSize: 25.0),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
         ),
         actions: [
           IconButton(
@@ -38,55 +44,23 @@ class _BrowseState extends State<Browse> {
               );
             },
             icon: const Icon(Icons.search),
-          )
+          ),
         ],
       ),
       drawer: const AppDrawer(),
       body: RefreshIndicator(
         onRefresh: () => refresh(context),
-        child: Column(
-          // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: const [
-            StorageSection(),
-            CategorySection(),
-          ],
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
+            child: const Column(
+              children: [StorageSection(), CategorySection()],
+            ),
+          ),
         ),
       ),
     );
   }
-
-  calculatePercent(int usedSpace, int totalSpace) {
-    return double.parse((usedSpace / totalSpace * 100).toStringAsFixed(1));
-  }
 }
-
-// class _RecentFiles extends StatelessWidget {
-//   @override
-//   Widget build(BuildContext context) {
-//     return Consumer<CoreProvider>(
-//       builder: (BuildContext context, coreProvider, Widget? child) {
-//         if (coreProvider.recentLoading) {
-//           return SizedBox(height: 150, child: CustomLoader());
-//         }
-//         return ListView.separated(
-//           padding: const EdgeInsets.only(right: 20),
-//           shrinkWrap: true,
-//           physics: const NeverScrollableScrollPhysics(),
-//           itemCount: coreProvider.recentFiles.length > 5
-//               ? 5
-//               : coreProvider.recentFiles.length,
-//           itemBuilder: (BuildContext context, int index) {
-//             FileSystemEntity file = coreProvider.recentFiles[index];
-//             return file.existsSync() ? FileItem(file: file) : const SizedBox();
-//           },
-//           separatorBuilder: (BuildContext context, int index) {
-//             return Container(
-//               height: 1,
-//               color: Theme.of(context).dividerColor,
-//             );
-//           },
-//         );
-//       },
-//     );
-//   }
-// }

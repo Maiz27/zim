@@ -1,29 +1,47 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zim/app.dart';
+import 'package:zim/utils/file_utils.dart';
+import 'package:zim/utils/theme_config.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  test('formats bytes with binary units', () {
+    expect(FileUtils.formatBytes(0, 1), '0.0 KB');
+    expect(FileUtils.formatBytes(1024, 1), '1.0 KB');
+    expect(FileUtils.formatBytes(1536, 1), '1.5 KB');
+  });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  test('removes Android app data suffix from storage paths', () {
+    expect(
+      FileUtils.removeDataDirectory(
+        '/storage/emulated/0/Android/data/dev.maiz.zim/files',
+      ).path,
+      '/storage/emulated/0/',
+    );
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  test('theme config builds matching light and dark Material 3 schemes', () {
+    expect(ThemeConfig.lightTheme.colorScheme.brightness, Brightness.light);
+    expect(ThemeConfig.darkTheme.colorScheme.brightness, Brightness.dark);
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Surface now follows brightness (the old config mis-assigned these:
+    // a dark surface in the light theme and vice versa).
+    expect(
+      ThemeConfig.lightTheme.colorScheme.surface.computeLuminance(),
+      greaterThan(0.5),
+    );
+    expect(
+      ThemeConfig.darkTheme.colorScheme.surface.computeLuminance(),
+      lessThan(0.5),
+    );
+
+    // Scaffold background tracks the scheme surface in both themes.
+    expect(
+      ThemeConfig.lightTheme.scaffoldBackgroundColor,
+      ThemeConfig.lightTheme.colorScheme.surface,
+    );
+    expect(
+      ThemeConfig.darkTheme.scaffoldBackgroundColor,
+      ThemeConfig.darkTheme.colorScheme.surface,
+    );
   });
 }

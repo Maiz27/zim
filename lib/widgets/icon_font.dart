@@ -13,7 +13,7 @@ class IconFont extends StatelessWidget {
       iconName,
       textAlign: TextAlign.center,
       style: TextStyle(
-        color: color ?? Theme.of(context).textTheme.bodySmall?.color,
+        color: color ?? Theme.of(context).colorScheme.onSurfaceVariant,
         fontSize: size ?? Theme.of(context).iconTheme.size,
         fontFamily: 'Icons',
       ),

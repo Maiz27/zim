@@ -3,8 +3,12 @@ import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/category_provider.dart';
+import '../../utils/design_tokens.dart';
 import '../../widgets/custom_divider.dart';
+import '../../widgets/custom_loader.dart';
+import '../../widgets/empty_state.dart';
 import '../../widgets/file/file_item.dart';
+import '../../widgets/motion.dart';
 
 class Archives extends StatefulWidget {
   final String title;
@@ -19,8 +23,11 @@ class _ArchivesState extends State<Archives> {
   void initState() {
     super.initState();
     SchedulerBinding.instance.addPostFrameCallback((_) {
-      Provider.of<CategoryProvider>(context, listen: false)
-          .getThumbnailFiles('archive');
+      if (!mounted) return;
+      Provider.of<CategoryProvider>(
+        context,
+        listen: false,
+      ).getThumbnailFiles('archive');
     });
   }
 
@@ -29,26 +36,36 @@ class _ArchivesState extends State<Archives> {
     return Consumer(
       builder:
           (BuildContext context, CategoryProvider provider, Widget? child) {
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(widget.title),
-          ),
-          body: Visibility(
-            visible: provider.currentFiles.isNotEmpty,
-            replacement: const Center(child: Text('No Files Found')),
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              itemCount: provider.currentFiles.length,
-              itemBuilder: (BuildContext context, int index) {
-                return FileItem(file: provider.currentFiles[index]);
-              },
-              separatorBuilder: (BuildContext context, int index) {
-                return const CustomDivider();
-              },
-            ),
-          ),
-        );
-      },
+            return Scaffold(
+              appBar: AppBar(title: Text(widget.title)),
+              body: provider.loading
+                  ? const CustomLoader()
+                  : Visibility(
+                visible: provider.currentFiles.isNotEmpty,
+                replacement: const EmptyState(
+                  icon: Icons.folder_zip_outlined,
+                  title: 'No archives yet',
+                  message: 'Zip and other archives will appear here.',
+                ),
+                child: ListView.separated(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.xs,
+                  ),
+                  itemCount: provider.currentFiles.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    return AnimatedEntrance(
+                      index: index,
+                      child: FileItem(file: provider.currentFiles[index]),
+                    );
+                  },
+                  separatorBuilder: (BuildContext context, int index) {
+                    return const CustomDivider();
+                  },
+                ),
+              ),
+            );
+          },
     );
   }
 }

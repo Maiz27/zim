@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/core_provider.dart';
+import '../../utils/design_tokens.dart';
+import '../../utils/file_utils.dart';
 import '../custom_loader.dart';
 import 'storage_item.dart';
-
-var idx = 0;
 
 class StorageSection extends StatefulWidget {
   const StorageSection({super.key});
@@ -17,85 +17,91 @@ class StorageSection extends StatefulWidget {
 }
 
 class _StorageSectionState extends State<StorageSection> {
+  int idx = 0;
+
   @override
   Widget build(BuildContext context) {
-    var deviceHeight = MediaQuery.of(context).size.height;
-    var deviceWidth = MediaQuery.of(context).size.width;
-
-    var list = [];
-
-    int usedSpace;
-    int totalSpace;
-    double percent;
     return Padding(
-      padding: const EdgeInsets.only(top: 15),
-      child: Center(
-        child: Container(
-          height: deviceHeight * 0.48,
-          width: deviceWidth * 0.9,
-          decoration: BoxDecoration(
-            color: Theme.of(context).backgroundColor.withOpacity(0.1),
-            borderRadius: const BorderRadius.all(
-              Radius.circular(40),
-            ),
-          ),
-          child: Column(children: [
-            Consumer<CoreProvider>(
-                builder: (BuildContext context, coreProvider, Widget? child) {
-              if (coreProvider.storageLoading) {
-                return const SizedBox(height: 100, child: CustomLoader());
-              }
-              FileSystemEntity item = coreProvider.availableStorage[idx];
-
-              String path = item.path.split('Android')[idx];
-              list.clear();
-              for (int i = 0; i < coreProvider.availableStorage.length; i++) {
-                if (i == 0) {
-                  list.add('Device');
-                }
-                if (i == 1) {
-                  list.add('SD');
-                }
-              }
-
-              if (idx == 0) {
-                percent = calculatePercent(
-                    coreProvider.usedSpace, coreProvider.totalSpace);
-                usedSpace = coreProvider.usedSpace;
-                totalSpace = coreProvider.totalSpace;
-              } else {
-                percent = calculatePercent(
-                    coreProvider.usedSDSpace, coreProvider.totalSDSpace);
-                usedSpace = coreProvider.usedSDSpace;
-                totalSpace = coreProvider.totalSDSpace;
-              }
-
-              return StorageItem(
-                percent: percent,
-                title: list[idx],
-                path: path,
-                usedSpace: usedSpace,
-                freeSpace: totalSpace - usedSpace,
-                onItemChange: handleStorageItemChanged,
-                items: list,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        AppSpacing.lg,
+        AppSpacing.xl,
+        0,
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
+          borderRadius: AppRadius.brXl,
+        ),
+        padding: const EdgeInsets.symmetric(
+          vertical: AppSpacing.lg,
+          horizontal: AppSpacing.sm,
+        ),
+        child: Consumer<CoreProvider>(
+          builder: (BuildContext context, coreProvider, Widget? child) {
+            if (coreProvider.storageLoading) {
+              return const SizedBox(height: 200, child: CustomLoader());
+            }
+            if (coreProvider.availableStorage.isEmpty) {
+              return const SizedBox(
+                height: 120,
+                child: Center(child: Text('No storage found')),
               );
-            }),
-          ]),
+            }
+            // Guard against idx pointing past a removed (e.g. SD) volume.
+            final safeIdx = idx.clamp(0, coreProvider.availableStorage.length - 1);
+            final FileSystemEntity item = coreProvider.availableStorage[safeIdx];
+            final String path = FileUtils.removeDataDirectory(item.path).path;
+
+            // One label per volume so the list length always matches
+            // availableStorage (no RangeError) and 3+ volumes stay selectable.
+            final List<String> list = [
+              for (int i = 0; i < coreProvider.availableStorage.length; i++)
+                if (i == 0)
+                  'Device'
+                else if (i == 1)
+                  'SD'
+                else
+                  'Storage ${i + 1}',
+            ];
+
+            final int usedSpace = safeIdx == 0
+                ? coreProvider.usedSpace
+                : coreProvider.usedSDSpace;
+            final int totalSpace = safeIdx == 0
+                ? coreProvider.totalSpace
+                : coreProvider.totalSDSpace;
+            final double percent = totalSpace == 0
+                ? 0
+                : calculatePercent(usedSpace, totalSpace);
+
+            return StorageItem(
+              percent: percent,
+              title: list[safeIdx],
+              path: path,
+              usedSpace: usedSpace,
+              freeSpace: totalSpace - usedSpace,
+              onItemChange: handleStorageItemChanged,
+              items: list,
+            );
+          },
         ),
       ),
     );
   }
 
-  calculatePercent(int usedSpace, int totalSpace) {
+  double calculatePercent(int usedSpace, int totalSpace) {
     return double.parse((usedSpace / totalSpace * 100).toStringAsFixed(1));
   }
 
-  handleStorageItemChanged(String value) {
-    if (value.toString() == 'Device') {
-      idx = 0;
-    } else if (value.toString() == 'SD') {
-      idx = 1;
-    }
-    setState(() {});
+  void handleStorageItemChanged(String? value) {
+    if (value == null) return;
+    setState(() {
+      idx = switch (value) {
+        'Device' => 0,
+        'SD' => 1,
+        _ => (int.tryParse(value.replaceFirst('Storage ', '')) ?? 1) - 1,
+      };
+    });
   }
 }

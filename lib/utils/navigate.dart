@@ -28,7 +28,7 @@ class Navigate {
     return val;
   }
 
-  static pushPageReplacement(BuildContext context, Widget page) {
+  static void pushPageReplacement(BuildContext context, Widget page) {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(

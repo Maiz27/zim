@@ -1,15 +1,17 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:mime_type/mime_type.dart';
 import 'package:open_file/open_file.dart';
 import 'package:provider/provider.dart';
 
+import '../../models/entry.dart';
 import '../../providers/category_provider.dart';
-import '../../utils/consts.dart';
+import '../../utils/design_tokens.dart';
 import '../../utils/file_utils.dart';
 import '../../widgets/custom_loader.dart';
+import '../../widgets/empty_state.dart';
 import '../../widgets/file/file_icon.dart';
+import '../../widgets/motion.dart';
 
 //Category with Thumbnail
 class CategoryOne extends StatefulWidget {
@@ -25,17 +27,26 @@ class _CategoryOneState extends State<CategoryOne> {
   void initState() {
     super.initState();
     SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       switch (widget.title.toLowerCase()) {
         case 'images':
-          Provider.of<CategoryProvider>(context, listen: false)
-              .getThumbnailFiles('image');
+          Provider.of<CategoryProvider>(
+            context,
+            listen: false,
+          ).getThumbnailFiles('image');
           break;
         case 'video':
-          Provider.of<CategoryProvider>(context, listen: false)
-              .getThumbnailFiles('video');
+          Provider.of<CategoryProvider>(
+            context,
+            listen: false,
+          ).getThumbnailFiles('video');
           break;
       }
     });
+  }
+
+  Widget _mediaTile(int index, Entry item) {
+    return AnimatedEntrance(index: index, child: _MediaTile(entry: item));
   }
 
   @override
@@ -43,141 +54,152 @@ class _CategoryOneState extends State<CategoryOne> {
     return Consumer(
       builder:
           (BuildContext context, CategoryProvider provider, Widget? child) {
-        if (provider.loading) {
-          return const Scaffold(body: CustomLoader());
-        }
-        return DefaultTabController(
-          length: provider.thumbnailTabs.length,
-          child: Scaffold(
-            appBar: AppBar(
-              title: Text(widget.title),
-              bottom: TabBar(
-                indicatorColor: Theme.of(context).colorScheme.secondary,
-                labelColor: Theme.of(context).colorScheme.secondary,
-                unselectedLabelColor:
-                    Theme.of(context).textTheme.caption!.color,
-                isScrollable: provider.thumbnailTabs.length < 3 ? false : true,
-                tabs: Constants.map<Widget>(
-                  provider.thumbnailTabs,
-                  (index, label) {
-                    return Tab(text: '$label');
-                  },
+            // Tabs are empty only before the first fetch; classify always
+            // yields at least 'All'. Guard so we never build a 0-tab
+            // controller on the initial frame.
+            if (provider.loading || provider.thumbnailTabs.isEmpty) {
+              return const Scaffold(body: CustomLoader());
+            }
+            final bool isVideo = widget.title.toLowerCase() == 'video';
+            return DefaultTabController(
+              length: provider.thumbnailTabs.length,
+              child: Scaffold(
+                appBar: AppBar(
+                  title: Text(widget.title),
+                  bottom: TabBar(
+                    isScrollable: provider.thumbnailTabs.length >= 3,
+                    tabs: [
+                      for (final label in provider.thumbnailTabs)
+                        Tab(text: label),
+                    ],
+                  ),
                 ),
-                onTap: (val) => provider.switchCurrentFiles(
-                    provider.thumbnailFiles, provider.thumbnailTabs[val]),
-              ),
-            ),
-            body: Visibility(
-              visible: provider.thumbnailFiles.isNotEmpty,
-              replacement: const Center(child: Text('No Files Found')),
-              child: TabBarView(
-                children: Constants.map<Widget>(
-                  provider.thumbnailTabs,
-                  (index, label) {
-                    List l = provider.currentFiles;
-
-                    return CustomScrollView(
-                      primary: false,
-                      slivers: <Widget>[
-                        SliverPadding(
-                          padding: const EdgeInsets.all(10.0),
-                          sliver: SliverGrid.count(
-                            crossAxisSpacing: 5.0,
-                            mainAxisSpacing: 5.0,
-                            crossAxisCount: 2,
-                            children: Constants.map(
-                              index == 0
-                                  ? provider.thumbnailFiles
-                                  : l.reversed.toList(),
-                              (index, item) {
-                                File file = File(item.path);
-                                String path = file.path;
-                                String mimeType = mime(path) ?? '';
-                                return _MediaTile(
-                                    file: file, mimeType: mimeType);
-                              },
+                body: Visibility(
+                  visible: provider.thumbnailFiles.isNotEmpty,
+                  replacement: EmptyState(
+                    icon: isVideo
+                        ? Icons.video_library_outlined
+                        : Icons.photo_library_outlined,
+                    title: isVideo ? 'No videos yet' : 'No images yet',
+                    message: isVideo
+                        ? 'Videos on your device will appear here.'
+                        : 'Images on your device will appear here.',
+                  ),
+                  child: TabBarView(
+                    children: [
+                      for (final (index, label)
+                          in provider.thumbnailTabs.indexed)
+                        CustomScrollView(
+                          primary: false,
+                          slivers: <Widget>[
+                            SliverPadding(
+                              padding: const EdgeInsets.all(AppSpacing.md),
+                              sliver: SliverGrid.count(
+                                crossAxisSpacing: AppSpacing.xs,
+                                mainAxisSpacing: AppSpacing.xs,
+                                crossAxisCount: 2,
+                                children: [
+                                  for (final (i, item)
+                                      in (index == 0
+                                              ? provider.thumbnailFiles
+                                              : provider.filesForTab(
+                                                  provider.thumbnailFiles,
+                                                  label,
+                                                ))
+                                          .indexed)
+                                    _mediaTile(i, item),
+                                ],
+                              ),
                             ),
-                          ),
+                          ],
                         ),
-                      ],
-                    );
-                  },
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ),
-        );
-      },
+            );
+          },
     );
   }
 }
 
 class _MediaTile extends StatelessWidget {
-  final File file;
-  final String mimeType;
+  final Entry entry;
 
-  const _MediaTile({required this.file, required this.mimeType});
+  const _MediaTile({required this.entry});
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => OpenFile.open(file.path),
-      child: GridTile(
-        header: Container(
-          height: 50,
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.black54, Colors.transparent],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-          ),
-          child: Align(
-            alignment: Alignment.topRight,
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: mimeType.split('/')[0] == 'video'
-                  ? Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Text(
-                          FileUtils.formatBytes(file.lengthSync(), 1),
-                          style: const TextStyle(
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(
-                          width: 5,
-                        ),
-                        const Icon(
-                          Icons.play_circle_filled,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                      ],
-                    )
-                  : Text(
-                      FileUtils.formatBytes(file.lengthSync(), 1),
-                      style: const TextStyle(
-                        fontSize: 12,
-                      ),
-                    ),
-            ),
-          ),
-        ),
-        child: mimeType.split('/')[0] == 'video'
-            ? FileIcon(file: file)
-            : Image(
-                fit: BoxFit.cover,
-                errorBuilder: (b, o, c) {
-                  return const Icon(Icons.image);
-                },
-                image: ResizeImage(
-                  FileImage(File(file.path)),
-                  width: 150,
-                  height: 150,
+    final scheme = Theme.of(context).colorScheme;
+    final isVideo = entry.kind == FileKind.video;
+    // media overlay: white-on-media label for legibility over thumbnails
+    final overlayStyle = Theme.of(context).textTheme.labelMedium?.copyWith(
+      color: Colors.white,
+    );
+
+    return PressableScale(
+      child: InkWell(
+        onTap: () => OpenFile.open(entry.path),
+        borderRadius: AppRadius.brMd,
+        child: ClipRRect(
+          borderRadius: AppRadius.brMd,
+          child: GridTile(
+            header: Container(
+              height: 50,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  // media overlay: scrim for label legibility over thumbnails
+                  colors: [
+                    scheme.scrim.withValues(alpha: 0.55),
+                    Colors.transparent,
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                 ),
               ),
+              child: Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.sm),
+                  child: isVideo
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Text(
+                              FileUtils.formatBytes(entry.size, 1),
+                              style: overlayStyle,
+                            ),
+                            const SizedBox(width: AppSpacing.xs),
+                            // media overlay: white icon for legibility
+                            const Icon(
+                              Icons.play_circle_filled,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                          ],
+                        )
+                      : Text(
+                          FileUtils.formatBytes(entry.size, 1),
+                          style: overlayStyle,
+                        ),
+                ),
+              ),
+            ),
+            child: isVideo
+                ? FileIcon(entry: entry)
+                : Image(
+                    fit: BoxFit.cover,
+                    errorBuilder: (b, o, c) {
+                      return const Icon(Icons.image);
+                    },
+                    image: ResizeImage(
+                      FileImage(File(entry.path)),
+                      width: 150,
+                      height: 150,
+                    ),
+                  ),
+          ),
+        ),
       ),
     );
   }

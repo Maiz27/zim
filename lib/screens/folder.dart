@@ -1,17 +1,20 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:path/path.dart' as path_lib;
+import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 
-import '../providers/category_provider.dart';
+import '../models/entry.dart';
+import '../providers/settings_provider.dart';
+import '../services/file_repository.dart';
+import '../utils/design_tokens.dart';
 import '../utils/dialogs.dart';
-import '../utils/file_utils.dart';
-import '../utils/theme_config.dart';
 import '../widgets/custom_divider.dart';
 import '../widgets/dialogs/decompress_archive_dialog.dart';
 import '../widgets/dir_item.dart';
+import '../widgets/empty_state.dart';
 import '../widgets/file/file_item.dart';
+import '../widgets/motion.dart';
 import '../widgets/path_bar.dart';
 import '../widgets/sort_sheet.dart';
 import '../widgets/dialogs/add_file_dialog.dart';
@@ -21,11 +24,7 @@ class Folder extends StatefulWidget {
   final String title;
   final String path;
 
-  const Folder({
-    Key? key,
-    required this.title,
-    required this.path,
-  }) : super(key: key);
+  const Folder({super.key, required this.title, required this.path});
 
   @override
   // ignore: library_private_types_in_public_api
@@ -33,10 +32,12 @@ class Folder extends StatefulWidget {
 }
 
 class _FolderState extends State<Folder> with WidgetsBindingObserver {
+  static const FileRepository _repo = FileRepository();
+
   late String path;
   List<String> paths = <String>[];
 
-  List<FileSystemEntity> files = <FileSystemEntity>[];
+  List<Entry> files = <Entry>[];
   bool showHidden = false;
 
   @override
@@ -46,33 +47,27 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
     }
   }
 
-  getFiles() async {
+  Future<void> getFiles() async {
+    if (!mounted) return;
+    final settings = Provider.of<SettingsProvider>(context, listen: false);
+    showHidden = settings.showHidden;
     try {
-      var provider = Provider.of<CategoryProvider>(context, listen: false);
-      Directory dir = Directory(path);
-      List<FileSystemEntity> dirFiles = dir.listSync();
-      files.clear();
-      showHidden = provider.showHidden;
-      setState(() {});
-      for (FileSystemEntity file in dirFiles) {
-        if (!showHidden) {
-          if (!path_lib.basename(file.path).startsWith('.')) {
-            files.add(file);
-            setState(() {});
-          }
-        } else {
-          files.add(file);
-          setState(() {});
+      final listed = _repo.listEntries(path, showHidden: showHidden);
+      files = FileRepository.sortEntries(listed, settings.sort);
+    } on FileOpException catch (e) {
+      files = <Entry>[];
+      if (!mounted) return;
+      Dialogs.showToast(e.message);
+      if (e.kind == FileOpError.permissionDenied) {
+        if (paths.length > 1) {
+          navigateBack();
+          return;
         }
-      }
-
-      files = FileUtils.sortList(files, provider.sort);
-    } catch (e) {
-      if (e.toString().contains('Permission denied')) {
-        Dialogs.showToast('Permission Denied! cannot access this Directory!');
-        navigateBack();
+        Navigator.pop(context);
+        return;
       }
     }
+    if (mounted) setState(() {});
   }
 
   @override
@@ -90,7 +85,7 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
   }
 
-  navigateBack() {
+  void navigateBack() {
     paths.removeLast();
     path = paths.last;
     setState(() {});
@@ -99,17 +94,16 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        if (paths.length == 1) {
-          return true;
-        } else {
+    return PopScope(
+      canPop: paths.length == 1,
+      onPopInvokedWithResult: (bool didPop, Object? result) {
+        if (didPop) return;
+        if (paths.length > 1) {
           paths.removeLast();
           setState(() {
             path = paths.last;
           });
           getFiles();
-          return false;
         }
       },
       child: Scaffold(
@@ -124,18 +118,19 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
               }
             },
           ),
-          elevation: 4,
           title: Column(
+            mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(widget.title),
+              Text(widget.title, maxLines: 1, overflow: TextOverflow.ellipsis),
               Text(
                 path,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w400,
-                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w400),
               ),
             ],
           ),
@@ -145,7 +140,6 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
                 ? Icons.smartphone
                 : Icons.sd_card,
             onChanged: (index) {
-              // print(paths[index]);
               path = paths[index];
               paths.removeRange(index + 1, paths.length);
               setState(() {});
@@ -159,6 +153,7 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
                   context: context,
                   builder: (context) => const SortSheet(),
                 );
+                if (!mounted) return;
                 getFiles();
               },
               tooltip: 'Sort by',
@@ -167,46 +162,60 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
           ],
         ),
         body: Visibility(
-          replacement: const Center(child: Text('There\'s nothing here')),
+          replacement: const EmptyState(
+            icon: Icons.folder_open_outlined,
+            title: 'This folder is empty',
+          ),
           visible: files.isNotEmpty,
           child: ListView.separated(
-            padding:
-                const EdgeInsets.only(top: 10, bottom: 80, left: 10, right: 10),
+            padding: const EdgeInsets.only(
+              top: AppSpacing.sm,
+              bottom: 80,
+              left: AppSpacing.sm,
+              right: AppSpacing.sm,
+            ),
             itemCount: files.length,
             itemBuilder: (BuildContext context, int index) {
-              FileSystemEntity file = files[index];
-              if (file.toString().split(':')[0] == 'Directory') {
-                return DirectoryItem(
-                  popTap: (v) async {
-                    if (v == 0) {
-                      renameDialog(context, file.path, 'dir');
-                    } else if (v == 1) {
-                      deleteFile(true, file);
-                    }
-                  },
-                  file: file,
-                  tap: () {
-                    paths.add(file.path);
-                    path = file.path;
-                    setState(() {});
-                    getFiles();
-                  },
+              final Entry entry = files[index];
+              if (entry.isDir) {
+                return AnimatedEntrance(
+                  index: index,
+                  child: DirectoryItem(
+                    popTap: (v) {
+                      if (v == 0) {
+                        renameDialog(context, entry.path, 'dir');
+                      } else if (v == 1) {
+                        deleteFile(entry);
+                      }
+                    },
+                    file: entry,
+                    tap: () {
+                      paths.add(entry.path);
+                      path = entry.path;
+                      setState(() {});
+                      getFiles();
+                    },
+                  ),
                 );
               }
-              return FileItem(
-                file: file,
-                popTap: (v) async {
-                  if (v == 0) {
-                    renameDialog(context, file.path, 'file');
-                  } else if (v == 1) {
-                    deleteFile(false, file);
-                  } else if (v == 2) {
-                    decompressDialog(context, file.path, file.parent.path);
-                  } else if (v == 3) {
-                    // TODO: Implement Share file feature
-                    // print('Share');
-                  }
-                },
+              return AnimatedEntrance(
+                index: index,
+                child: FileItem(
+                  file: entry,
+                  popTap: (v) {
+                    if (v == 0) {
+                      renameDialog(context, entry.path, 'file');
+                    } else if (v == 1) {
+                      deleteFile(entry);
+                    } else if (v == 2) {
+                      decompressDialog(
+                        context,
+                        entry.path,
+                        p.dirname(entry.path),
+                      );
+                    }
+                  },
+                ),
               );
             },
             separatorBuilder: (BuildContext context, int index) {
@@ -215,7 +224,6 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
           ),
         ),
         floatingActionButton: FloatingActionButton(
-          backgroundColor: ThemeConfig.primary,
           onPressed: () => addDialog(context, path),
           tooltip: 'Add Folder',
           child: const Icon(Icons.add),
@@ -224,47 +232,50 @@ class _FolderState extends State<Folder> with WidgetsBindingObserver {
     );
   }
 
-  deleteFile(bool directory, var file) async {
+  Future<void> deleteFile(Entry entry) async {
     try {
-      if (directory) {
-        await Directory(file.path).delete(recursive: true);
-      } else {
-        await File(file.path).delete(recursive: true);
-      }
-      Dialogs.showToast('Delete Successful');
-    } catch (e) {
-      // print(e.toString());
-      if (e.toString().contains('Permission denied')) {
-        Dialogs.showToast('Cannot write to this Storage device!');
-      }
+      await _repo.delete(
+        entry.isDir ? Directory(entry.path) : File(entry.path),
+      );
+      if (mounted) Dialogs.showToast('Delete Successful');
+    } on FileOpException catch (e) {
+      if (mounted) Dialogs.showToast(e.message);
     }
-    getFiles();
+    await getFiles();
   }
 
-  addDialog(BuildContext context, String path) async {
+  Future<void> addDialog(BuildContext context, String path) async {
     await showDialog(
       context: context,
       builder: (context) => AddFileDialog(path: path),
     );
+    if (!mounted) return;
     getFiles();
   }
 
-  renameDialog(BuildContext context, String path, String type) async {
+  Future<void> renameDialog(
+    BuildContext context,
+    String path,
+    String type,
+  ) async {
     await showDialog(
       context: context,
       builder: (context) => RenameFileDialog(path: path, type: type),
     );
+    if (!mounted) return;
     getFiles();
   }
 
-  decompressDialog(BuildContext context, String path, String parent) async {
+  Future<void> decompressDialog(
+    BuildContext context,
+    String path,
+    String parent,
+  ) async {
     await showDialog(
       context: context,
-      builder: (context) => DecompressArchiveDialog(
-        path: path,
-        parent: parent,
-      ),
+      builder: (context) => DecompressArchiveDialog(path: path, parent: parent),
     );
+    if (!mounted) return;
     getFiles();
   }
 }

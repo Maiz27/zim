@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 
-import '../utils/theme_config.dart';
+import '../utils/design_tokens.dart';
 
 class PathBar extends StatelessWidget implements PreferredSizeWidget {
-  final List paths;
+  final List<String> paths;
   final Function(int) onChanged;
   final IconData? icon;
 
   const PathBar({
-    Key? key,
+    super.key,
     required this.paths,
     required this.onChanged,
     this.icon,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return SizedBox(
       height: 50,
       child: Align(
@@ -25,34 +29,32 @@ class PathBar extends StatelessWidget implements PreferredSizeWidget {
           shrinkWrap: true,
           itemCount: paths.length,
           itemBuilder: (BuildContext context, int index) {
-            String i = paths[index];
-            List split = i.split('/');
+            final bool active = index == paths.length - 1;
+            final Color segmentColor = active
+                ? colorScheme.primary
+                : colorScheme.onSurfaceVariant;
+            final String segment = p.basename(paths[index]);
             if (index == 0) {
               return IconButton(
-                icon: Icon(
-                  icon ?? Icons.smartphone,
-                  color: index == paths.length - 1
-                      ? ThemeConfig.accent
-                      : ThemeConfig.lightBg,
-                ),
+                icon: Icon(icon ?? Icons.smartphone, color: segmentColor),
                 onPressed: () => onChanged(index),
               );
             }
             return InkWell(
               onTap: () => onChanged(index),
+              borderRadius: AppRadius.brSm,
               child: SizedBox(
                 height: 40,
                 child: Center(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xs,
+                    ),
                     child: Text(
-                      '${split[split.length - 1]}',
-                      style: TextStyle(
-                        fontSize: 16,
+                      segment,
+                      style: textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: index == paths.length - 1
-                            ? ThemeConfig.accent
-                            : ThemeConfig.lightBg,
+                        color: segmentColor,
                       ),
                     ),
                   ),
@@ -63,7 +65,7 @@ class PathBar extends StatelessWidget implements PreferredSizeWidget {
           separatorBuilder: (BuildContext context, int index) {
             return Icon(
               Icons.chevron_right,
-              color: ThemeConfig.darkBg,
+              color: colorScheme.onSurfaceVariant,
             );
           },
         ),

@@ -12,9 +12,6 @@ import 'screens/ios_error.dart';
 import 'screens/splash.dart';
 import 'utils/theme_config.dart';
 
-// ignore: prefer_typing_uninitialized_variables
-var isFirst;
-
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
@@ -23,32 +20,27 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  bool? _isFirst;
+
   @override
   void initState() {
     super.initState();
     isFirstLaunch();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       Provider.of<CoreProvider>(context, listen: false).checkSpace();
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
-          overlays: SystemUiOverlay.values);
-      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-        statusBarColor: Theme.of(context).primaryColor,
-        systemNavigationBarColor: Colors.black,
-        statusBarIconBrightness:
-            Theme.of(context).primaryColor == ThemeConfig.darkTheme.primaryColor
-                ? Brightness.light
-                : Brightness.dark,
-      ));
     });
   }
 
-  isFirstLaunch() async {
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-    var first = preferences.getBool('first_time');
-    isFirst = first;
+  Future<void> isFirstLaunch() async {
+    final preferences = await SharedPreferences.getInstance();
+    final first = preferences.getBool('first_time');
     if (first == null) {
-      preferences.setBool('first_time', false);
+      await preferences.setBool('first_time', false);
     }
+    if (!mounted) return;
+    setState(() => _isFirst = first);
   }
 
   @override
@@ -60,14 +52,30 @@ class _MyAppState extends State<MyApp> {
           debugShowCheckedModeBanner: false,
           navigatorKey: appProvider.navigatorKey,
           title: 'Zim',
-          theme: appProvider.theme,
+          theme: ThemeConfig.lightTheme,
           darkTheme: ThemeConfig.darkTheme,
-          // home: const GetStarted(),
+          themeMode: appProvider.themeMode,
+          builder: (context, child) {
+            // Edge-to-edge: transparent system bars whose icons contrast the
+            // resolved theme brightness (handles ThemeMode.system correctly).
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            final overlay =
+                (isDark
+                        ? SystemUiOverlayStyle.light
+                        : SystemUiOverlayStyle.dark)
+                    .copyWith(
+                      statusBarColor: Colors.transparent,
+                      systemNavigationBarColor: Colors.transparent,
+                      systemNavigationBarContrastEnforced: false,
+                    );
+            return AnnotatedRegion<SystemUiOverlayStyle>(
+              value: overlay,
+              child: child ?? const SizedBox.shrink(),
+            );
+          },
           home: Platform.isIOS
               ? const IosError()
-              : Splash(
-                  first: isFirst ?? true,
-                ),
+              : Splash(first: _isFirst ?? true),
         );
       },
     );

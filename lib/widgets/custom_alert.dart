@@ -1,71 +1,30 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:zim/utils/design_tokens.dart';
 
-// ignore: must_be_immutable
+/// Themed wrapper around [Dialog] used by the file-management dialogs.
+///
+/// Previously this was a full-screen `Stack` with an `Expanded` Column, which
+/// fought the keyboard inset and didn't honor Material dialog insets. Using
+/// [Dialog] gives us correct sizing on phones/tablets and avoids the dialog
+/// being pushed off-screen when the soft keyboard opens.
 class CustomAlert extends StatelessWidget {
   final Widget child;
 
-  CustomAlert({Key? key, required this.child}) : super(key: key);
-
-  late double deviceWidth;
-  late double deviceHeight;
-  late double dialogHeight;
+  const CustomAlert({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
-    Orientation orientation = MediaQuery.of(context).orientation;
-    Size screenSize = MediaQuery.of(context).size;
-
-    deviceWidth = orientation == Orientation.portrait
-        ? screenSize.width
-        : screenSize.height;
-    deviceHeight = orientation == Orientation.portrait
-        ? screenSize.height
-        : screenSize.width;
-    dialogHeight = deviceHeight * (0.50);
-
-    return MediaQuery(
-      data: const MediaQueryData(),
-      child: GestureDetector(
-//        onTap: ()=>Navigator.pop(context),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(
-            sigmaX: 0.5,
-            sigmaY: 0.5,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisSize: MainAxisSize.max,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Expanded(
-                child: Stack(
-                  children: <Widget>[
-                    Center(
-                      child: SizedBox(
-                        width: deviceWidth * 0.9,
-                        child: GestureDetector(
-                          onTap: () {},
-                          child: Card(
-                            shape: const RoundedRectangleBorder(
-                              borderRadius: BorderRadius.only(
-                                topLeft: Radius.circular(10.0),
-                                topRight: Radius.circular(10.0),
-                                bottomLeft: Radius.circular(10.0),
-                                bottomRight: Radius.circular(10.0),
-                              ),
-                            ),
-                            child: child,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+    return BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 0.5, sigmaY: 0.5),
+      child: Dialog(
+        insetPadding: const EdgeInsets.all(AppSpacing.xxl),
+        shape: const RoundedRectangleBorder(borderRadius: AppRadius.brXl),
+        clipBehavior: Clip.antiAlias,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: child,
         ),
       ),
     );

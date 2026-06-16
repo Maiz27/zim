@@ -1,40 +1,34 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:open_file/open_file.dart';
-import 'package:path/path.dart';
 
+import '../../models/entry.dart';
 import '../../utils/file_utils.dart';
+import '../entity_popup.dart';
+import '../entity_tile.dart';
 import 'file_icon.dart';
-import 'file_popup.dart';
 
 class FileItem extends StatelessWidget {
-  final FileSystemEntity file;
-  final Function? popTap;
+  final Entry file;
+  final EntityAction? popTap;
 
-  const FileItem({
-    Key? key,
-    required this.file,
-    this.popTap,
-  }) : super(key: key);
+  const FileItem({super.key, required this.file, this.popTap});
+
+  /// Subtitle from the prefetched [Entry] fields — no per-row disk I/O.
+  String _buildSubtitle() {
+    final size = FileUtils.formatBytes(file.size, 2);
+    final modified = FileUtils.formatTime(file.modified.toIso8601String());
+    return '$size, $modified';
+  }
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
+    return EntityTile(
       onTap: () => OpenFile.open(file.path),
-      contentPadding: const EdgeInsets.all(0),
-      leading: FileIcon(file: file),
-      title: Text(
-        basename(file.path),
-        style: const TextStyle(fontSize: 14),
-        maxLines: 2,
-      ),
-      subtitle: Text(
-        '${FileUtils.formatBytes(File(file.path).lengthSync(), 2)},'
-        ' ${FileUtils.formatTime(File(file.path).lastModifiedSync().toIso8601String())}',
-      ),
-      trailing:
-          popTap == null ? null : FilePopup(path: file.path, popTap: popTap!),
+      onAction: popTap,
+      canDecompress: FileUtils.isExtractableArchive(file.path),
+      leading: FileIcon(entry: file),
+      title: file.name,
+      subtitle: _buildSubtitle(),
     );
   }
 }

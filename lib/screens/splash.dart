@@ -1,16 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
-import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../utils/design_tokens.dart';
 import '../utils/navigate.dart';
-import '../utils/theme_config.dart';
 import 'get_started.dart';
 import 'main/browse.dart';
 
-// ignore: must_be_immutable
 class Splash extends StatefulWidget {
   final bool first;
   const Splash({super.key, required this.first});
@@ -20,89 +17,94 @@ class Splash extends StatefulWidget {
 }
 
 class _SplashState extends State<Splash> {
-  startTimeout() {
-    return Timer(const Duration(seconds: 2), handleTimeout);
-  }
-
-  void handleTimeout() {
-    changeScreen();
-  }
-
-  changeScreen() async {
-    PermissionStatus status = await Permission.storage.status;
-    if (!status.isGranted) {
-      requestPermission();
-    } else {
-      if (!mounted) return;
-      if (!widget.first) {
-        Navigate.pushPageReplacement(context, const Browse());
-      } else {
-        Navigate.pushPageReplacement(context, const GetStarted());
-      }
-    }
-  }
-
-  requestPermission() async {
-    if (await Permission.manageExternalStorage.isDenied) {
-      if (await Permission.manageExternalStorage
-          .request()
-          .isPermanentlyDenied) {
-        // The user opted to never again see the permission request dialog for this
-        // app. The only way to change the permission's status now is to let the
-        // user manually enable it in the system settings.
-        openAppSettings();
-      } else {
-        // You can request the permission again.
-        requestPermission();
-      }
-    } else {
-      if (!mounted) return;
-      if (!widget.first) {
-        Navigate.pushPageReplacement(context, const Browse());
-      } else {
-        Navigate.pushPageReplacement(context, const GetStarted());
-      }
-    }
-  }
+  bool _shown = false;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
-    startTimeout();
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
-          overlays: SystemUiOverlay.values);
-      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-        statusBarColor: Theme.of(context).primaryColor,
-        systemNavigationBarColor: Colors.black,
-        statusBarIconBrightness:
-            Theme.of(context).primaryColor == ThemeConfig.darkTheme.primaryColor
-                ? Brightness.light
-                : Brightness.dark,
-      ));
+    _timer = Timer(const Duration(seconds: 2), changeScreen);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _shown = true);
     });
   }
 
   @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> changeScreen() async {
+    final PermissionStatus status = await Permission.storage.status;
+    if (!status.isGranted) {
+      requestPermission();
+    } else {
+      _goNext();
+    }
+  }
+
+  Future<void> requestPermission() async {
+    if (await Permission.manageExternalStorage.isGranted) {
+      _goNext();
+      return;
+    }
+    final PermissionStatus status =
+        await Permission.manageExternalStorage.request();
+    if (status.isGranted) {
+      _goNext();
+    } else {
+      // Denied (including permanently): the only way forward is the system
+      // settings page. Hand off there instead of re-prompting in an unbounded
+      // self-recursion.
+      openAppSettings();
+    }
+  }
+
+  void _goNext() {
+    if (!mounted) return;
+    Navigate.pushPageReplacement(
+      context,
+      widget.first ? const GetStarted() : const Browse(),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
+
     return Scaffold(
-      body: Center(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Image(image: AssetImage('assets/imgs/logo/128px.png')),
-            const SizedBox(height: 5),
-            Text(
-              'Zim',
-              style: TextStyle(
-                color: Theme.of(context).primaryColor,
-                fontSize: 25.0,
-                fontWeight: FontWeight.bold,
+      body: SafeArea(
+        child: Center(
+          child: AnimatedOpacity(
+            opacity: _shown ? 1 : 0,
+            duration: AppMotion.slow,
+            curve: AppMotion.enter,
+            child: AnimatedScale(
+              scale: _shown ? 1 : 0.92,
+              duration: AppMotion.slow,
+              curve: AppMotion.emphasized,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Image(
+                    image: AssetImage('assets/imgs/logo/128px.png'),
+                    width: 96,
+                    height: 96,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    'Zim',
+                    style: text.headlineSmall?.copyWith(
+                      color: scheme.primary,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
