@@ -82,6 +82,50 @@ class FileUtils {
     return dir.listSync();
   }
 
+  /// Recursively collects file paths under each root in [args] (a
+  /// `(roots, showHidden)` record). Runs inside a background isolate via
+  /// [getAllFilePaths] + `compute`, so it must stay free of platform channels —
+  /// the storage roots are resolved on the main isolate and passed in.
+  static List<String> scanPaths((List<String>, bool) args) {
+    final (roots, showHidden) = args;
+    final files = <String>[];
+    for (final root in roots) {
+      try {
+        _collectPaths(root, showHidden, files);
+      } catch (_) {
+        // Skip unreadable roots rather than aborting the whole scan.
+      }
+    }
+    return files;
+  }
+
+  static void _collectPaths(String path, bool showHidden, List<String> out) {
+    for (final entity in Directory(path).listSync()) {
+      final bool hidden = entity.isHidden;
+      if (FileSystemEntity.isFileSync(entity.path)) {
+        if (showHidden || !hidden) out.add(entity.path);
+      } else {
+        if (entity.path.contains('/storage/emulated/0/Android')) continue;
+        if (showHidden || !hidden) {
+          try {
+            _collectPaths(entity.path, showHidden, out);
+          } catch (_) {
+            // Skip directories we cannot read.
+          }
+        }
+      }
+    }
+  }
+
+  /// All file paths on the device, scanned off the UI isolate. Storage roots
+  /// are resolved here (platform channel) then the recursive walk is offloaded
+  /// to a background isolate so it never blocks the frame.
+  static Future<List<String>> getAllFilePaths({bool showHidden = false}) async {
+    final storages = await getStorageList();
+    final roots = storages.map((d) => d.path).toList();
+    return compute(scanPaths, (roots, showHidden));
+  }
+
   /// Get all Files on the Device
   static Future<List<FileSystemEntity>> getAllFiles({
     bool showHidden = false,
@@ -107,11 +151,10 @@ class FileUtils {
   static Future<List<FileSystemEntity>> getRecentFiles({
     bool showHidden = false,
   }) async {
-    List<FileSystemEntity> files = await getAllFiles(showHidden: showHidden);
+    final paths = await getAllFilePaths(showHidden: showHidden);
+    final files = paths.map((p) => File(p)).toList();
     files.sort(
-      (a, b) => File(
-        a.path,
-      ).lastAccessedSync().compareTo(File(b.path).lastAccessedSync()),
+      (a, b) => a.lastAccessedSync().compareTo(b.lastAccessedSync()),
     );
     return files.reversed.toList();
   }

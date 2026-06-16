@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zim/providers/category_provider.dart';
 import 'package:zim/services/file_repository.dart';
+import 'package:zim/utils/file_utils.dart';
 
 void main() {
   group('CategoryProvider.classify (pure)', () {
@@ -37,6 +38,39 @@ void main() {
       final (files, _) = CategoryProvider.classify(paths, 'archive');
       expect(files.length, 1);
       expect(files.first.path.endsWith('data.zip'), isTrue);
+    });
+  });
+
+  group('FileUtils.scanPaths (offloaded walk)', () {
+    late Directory tmp;
+
+    setUp(() async {
+      tmp = await Directory.systemTemp.createTemp('zim_scan_test');
+      File('${tmp.path}/top.txt').writeAsStringSync('x');
+      File('${tmp.path}/.hidden.txt').writeAsStringSync('x');
+      Directory('${tmp.path}/sub').createSync();
+      File('${tmp.path}/sub/nested.txt').writeAsStringSync('x');
+    });
+
+    tearDown(() {
+      if (tmp.existsSync()) tmp.deleteSync(recursive: true);
+    });
+
+    test('recurses into subdirectories and hides dotfiles by default', () {
+      final found = FileUtils.scanPaths(([tmp.path], false));
+      expect(found.any((p) => p.endsWith('top.txt')), isTrue);
+      expect(found.any((p) => p.endsWith('nested.txt')), isTrue);
+      expect(found.any((p) => p.endsWith('.hidden.txt')), isFalse);
+    });
+
+    test('includes dotfiles when showHidden is set', () {
+      final found = FileUtils.scanPaths(([tmp.path], true));
+      expect(found.any((p) => p.endsWith('.hidden.txt')), isTrue);
+    });
+
+    test('skips unreadable roots without throwing', () {
+      final found = FileUtils.scanPaths((['${tmp.path}/does_not_exist'], false));
+      expect(found, isEmpty);
     });
   });
 
