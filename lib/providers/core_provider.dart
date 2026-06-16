@@ -5,6 +5,10 @@ import 'package:path_provider/path_provider.dart';
 import 'package:zim/utils/file_utils.dart';
 
 class CoreProvider extends ChangeNotifier {
+  /// Single platform seam for native storage queries.
+  static const MethodChannel _storageChannel =
+      MethodChannel('dev.maiz.zim/storage');
+
   List<FileSystemEntity> availableStorage = <FileSystemEntity>[];
   List<File> recentFiles = <File>[];
   int totalSpace = 0;
@@ -17,29 +21,38 @@ class CoreProvider extends ChangeNotifier {
   bool recentLoading = true;
 
   Future<void> checkSpace() async {
-    setRecentLoading(true);
-    setStorageLoading(true);
+    recentLoading = true;
+    storageLoading = true;
     recentFiles.clear();
     availableStorage.clear();
-    List<Directory> dirList = await getExternalStorageDirectories() ?? [];
-    availableStorage.addAll(dirList);
     notifyListeners();
-    MethodChannel platform = const MethodChannel('dev.maiz.zim/storage');
-    int free = await platform.invokeMethod<int>('getStorageFreeSpace') ?? 0;
-    int total = await platform.invokeMethod<int>('getStorageTotalSpace') ?? 0;
-    setFreeSpace(free);
-    setTotalSpace(total);
-    setUsedSpace(total - free);
+
+    final List<Directory> dirList = await getExternalStorageDirectories() ?? [];
+    availableStorage.addAll(dirList);
+
+    final int free =
+        await _storageChannel.invokeMethod<int>('getStorageFreeSpace') ?? 0;
+    final int total =
+        await _storageChannel.invokeMethod<int>('getStorageTotalSpace') ?? 0;
+    freeSpace = free;
+    totalSpace = total;
+    usedSpace = total - free;
+
     if (dirList.length > 1) {
-      int freeSD =
-          await platform.invokeMethod<int>('getExternalStorageFreeSpace') ?? 0;
-      int totalSD =
-          await platform.invokeMethod<int>('getExternalStorageTotalSpace') ?? 0;
-      setFreeSDSpace(freeSD);
-      setTotalSDSpace(totalSD);
-      setUsedSDSpace(totalSD - freeSD);
+      final int freeSD = await _storageChannel
+              .invokeMethod<int>('getExternalStorageFreeSpace') ??
+          0;
+      final int totalSD = await _storageChannel
+              .invokeMethod<int>('getExternalStorageTotalSpace') ??
+          0;
+      freeSDSpace = freeSD;
+      totalSDSpace = totalSD;
+      usedSDSpace = totalSD - freeSD;
     }
-    setStorageLoading(false);
+
+    storageLoading = false;
+    notifyListeners();
+
     getRecentFiles();
   }
 
@@ -48,46 +61,7 @@ class CoreProvider extends ChangeNotifier {
       showHidden: false,
     );
     recentFiles.addAll(files.map((file) => File(file.path)));
-    setRecentLoading(false);
-  }
-
-  void setFreeSpace(int value) {
-    freeSpace = value;
-    notifyListeners();
-  }
-
-  void setTotalSpace(int value) {
-    totalSpace = value;
-    notifyListeners();
-  }
-
-  void setUsedSpace(int value) {
-    usedSpace = value;
-    notifyListeners();
-  }
-
-  void setFreeSDSpace(int value) {
-    freeSDSpace = value;
-    notifyListeners();
-  }
-
-  void setTotalSDSpace(int value) {
-    totalSDSpace = value;
-    notifyListeners();
-  }
-
-  void setUsedSDSpace(int value) {
-    usedSDSpace = value;
-    notifyListeners();
-  }
-
-  void setStorageLoading(bool value) {
-    storageLoading = value;
-    notifyListeners();
-  }
-
-  void setRecentLoading(bool value) {
-    recentLoading = value;
+    recentLoading = false;
     notifyListeners();
   }
 }

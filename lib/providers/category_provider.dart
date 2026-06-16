@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:zim/services/file_repository.dart';
 import 'package:zim/utils/file_utils.dart';
 
 class CategoryProvider extends ChangeNotifier {
@@ -10,6 +11,8 @@ class CategoryProvider extends ChangeNotifier {
     getHidden();
     getSort();
   }
+
+  static const FileRepository _repo = FileRepository();
 
   bool loading = false;
   List<FileSystemEntity> downloads = <FileSystemEntity>[];
@@ -37,6 +40,31 @@ class CategoryProvider extends ChangeNotifier {
     await getFiles(type, nonThumbnailFiles, nonThumbnailTabs);
   }
 
+  /// The immediate parent directory name of [path] (the tab a file belongs to).
+  static String _parentDirName(String path) {
+    final parts = path.split('/');
+    return parts.length >= 2 ? parts[parts.length - 2] : '';
+  }
+
+  /// Pure classification: returns the files in [paths] matching [type] and the
+  /// set of tab names (parent dirs) they fall under, with 'All' first. No I/O,
+  /// no notify — unit-testable in isolation.
+  static (List<FileSystemEntity>, List<String>) classify(
+    List<String> paths,
+    String type,
+  ) {
+    final matched = <FileSystemEntity>[];
+    final tabs = <String>{'All'};
+    for (final path in paths) {
+      final file = File(path);
+      if (shouldAddFile(file, type)) {
+        matched.add(file);
+        tabs.add(_parentDirName(path));
+      }
+    }
+    return (matched, tabs.toList());
+  }
+
   Future<void> getFiles(
     String type,
     List<FileSystemEntity> files,
@@ -44,76 +72,41 @@ class CategoryProvider extends ChangeNotifier {
     String? dirName,
   ]) async {
     setLoading(true);
-    tabs.clear();
     files.clear();
-    tabs.add('All');
+    tabs.clear();
     if (dirName != null) {
-      List<Directory> storages = await FileUtils.getStorageList();
-      for (var dir in storages) {
-        if (Directory('${dir.path}$dirName').existsSync()) {
-          List<FileSystemEntity> dirFiles = Directory(
-            '${dir.path}$dirName',
-          ).listSync();
-          for (var file in dirFiles) {
-            if (FileSystemEntity.isFileSync(file.path)) {
-              files.add(file);
-              tabs.add(file.path.split('/')[file.path.split('/').length - 2]);
-              tabs = tabs.toSet().toList();
-              notifyListeners();
-            }
+      final tabSet = <String>{'All'};
+      final storages = await FileUtils.getStorageList();
+      for (final dir in storages) {
+        final target = '${dir.path}$dirName';
+        if (!Directory(target).existsSync()) continue;
+        for (final file in _repo.list(target, showHidden: true)) {
+          if (FileSystemEntity.isFileSync(file.path)) {
+            files.add(file);
+            tabSet.add(_parentDirName(file.path));
           }
         }
       }
+      tabs.addAll(tabSet);
     } else {
-      List<FileSystemEntity> allFiles = await FileUtils.getAllFiles(
-        showHidden: showHidden,
-      );
-      processFilePaths(
+      final allFiles = await FileUtils.getAllFiles(showHidden: showHidden);
+      final (matched, tabList) = classify(
         allFiles.map((file) => file.path).toList(),
         type,
-        files,
-        tabs,
       );
+      files.addAll(matched);
+      tabs.addAll(tabList);
       currentFiles = files;
-      setLoading(false);
     }
+    setLoading(false);
   }
 
-  void processFilePaths(
-    List<String> filePaths,
-    String type,
-    List<FileSystemEntity> files,
-    List<String> tabs,
-  ) {
-    Set<String> tabs0 = tabs.toSet();
-    for (var filePath in filePaths) {
-      File file = File(filePath);
-      if (shouldAddFile(file, type)) {
-        files.add(file);
-        tabs0.add(file.path.split('/')[file.path.split('/').length - 2]);
-      }
-      notifyListeners();
-    }
-    tabs
-      ..clear()
-      ..addAll(tabs0);
-  }
-
-  bool shouldAddFile(File file, String type) {
+  static bool shouldAddFile(File file, String type) {
     switch (type) {
       case 'application':
         return extension(file.path) == '.apk';
       case 'archive':
-        return [
-          '.zip',
-          '.rar',
-          '.tar',
-          '.gz',
-          '.7z',
-          '.zlib',
-          'bz2',
-          '.xz',
-        ].contains(extension(file.path));
+        return FileUtils.isArchive(file.path);
       case 'text':
         return [
           '.pdf',
@@ -140,7 +133,7 @@ class CategoryProvider extends ChangeNotifier {
     String label = item[1];
     List<FileSystemEntity> files = [];
     for (var file in items) {
-      if ('${file.path.split('/')[file.path.split('/').length - 2]}' == label) {
+      if (_parentDirName(file.path) == label) {
         files.add(file);
       }
     }
