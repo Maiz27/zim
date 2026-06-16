@@ -1,7 +1,9 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
+import '../models/entry.dart';
 import '../utils/file_utils.dart';
 
 /// Classified file-operation failures, so the UI can show a clear, recoverable
@@ -45,6 +47,90 @@ class FileRepository {
     } on FileSystemException catch (e) {
       throw _map(e);
     }
+  }
+
+  /// Entries directly inside [path] (non-recursive) as value objects, statted
+  /// once. Hides dotfiles unless [showHidden].
+  List<Entry> listEntries(String path, {bool showHidden = false}) {
+    return list(path, showHidden: showHidden).map(Entry.of).toList();
+  }
+
+  /// Full recursive device scan, offloaded to a background isolate. Storage
+  /// roots are resolved here (platform channel) then the walk runs via
+  /// `compute`, so it never blocks the frame.
+  Future<List<Entry>> scan({bool showHidden = false}) async {
+    final roots =
+        (await FileUtils.getStorageList()).map((d) => d.path).toList();
+    return compute(scanEntries, (roots, showHidden));
+  }
+
+  /// Device files, newest-modified first. Built on the offloaded [scan].
+  Future<List<Entry>> recent({bool showHidden = false}) async {
+    final entries = await scan(showHidden: showHidden);
+    entries.sort((a, b) => b.modified.compareTo(a.modified));
+    return entries;
+  }
+
+  /// Recursively collects entries under the roots in [args] (a
+  /// `(roots, showHidden)` record). Pure + isolate-safe (no platform channels),
+  /// so it runs via `compute`. Statts each file once into an [Entry].
+  static List<Entry> scanEntries((List<String>, bool) args) {
+    final (roots, showHidden) = args;
+    final out = <Entry>[];
+    for (final root in roots) {
+      try {
+        _collect(root, showHidden, out);
+      } catch (_) {
+        // Skip unreadable roots rather than aborting the whole scan.
+      }
+    }
+    return out;
+  }
+
+  static void _collect(String path, bool showHidden, List<Entry> out) {
+    for (final entity in Directory(path).listSync()) {
+      final bool hidden = p.basename(entity.path).startsWith('.');
+      if (entity is File) {
+        if (showHidden || !hidden) out.add(Entry.of(entity));
+      } else {
+        if (entity.path.contains('/storage/emulated/0/Android')) continue;
+        if (showHidden || !hidden) {
+          try {
+            _collect(entity.path, showHidden, out);
+          } catch (_) {
+            // Skip directories we cannot read.
+          }
+        }
+      }
+    }
+  }
+
+  /// Sorts [list] in place by the sort code used across the app
+  /// (0/1 name asc/desc, 2/3 modified asc/desc, 4/5 size desc/asc). Reads the
+  /// prefetched [Entry] fields — no per-comparison `statSync`.
+  static List<Entry> sortEntries(List<Entry> list, int sort) {
+    int byName(Entry a, Entry b) =>
+        a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    switch (sort) {
+      case 1:
+        list.sort((a, b) => byName(b, a));
+        break;
+      case 2:
+        list.sort((a, b) => a.modified.compareTo(b.modified));
+        break;
+      case 3:
+        list.sort((a, b) => b.modified.compareTo(a.modified));
+        break;
+      case 4:
+        list.sort((a, b) => b.size.compareTo(a.size));
+        break;
+      case 5:
+        list.sort((a, b) => a.size.compareTo(b.size));
+        break;
+      default:
+        list.sort(byName);
+    }
+    return list;
   }
 
   Future<void> delete(FileSystemEntity entity) async {

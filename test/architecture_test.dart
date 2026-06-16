@@ -1,8 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:zim/models/entry.dart';
 import 'package:zim/providers/category_provider.dart';
 import 'package:zim/services/file_repository.dart';
+import 'package:zim/utils/design_tokens.dart';
 import 'package:zim/utils/file_utils.dart';
 
 void main() {
@@ -38,6 +40,57 @@ void main() {
       final (files, _) = CategoryProvider.classify(paths, 'archive');
       expect(files.length, 1);
       expect(files.first.path.endsWith('data.zip'), isTrue);
+    });
+  });
+
+  group('Entry.kindOf (pure classification)', () {
+    test('classifies by extension before mime', () {
+      expect(Entry.kindOf('/a/x.apk', isDir: false), FileKind.apk);
+      expect(Entry.kindOf('/a/x.zip', isDir: false), FileKind.archive);
+      expect(Entry.kindOf('/a/x.pdf', isDir: false), FileKind.document);
+      expect(Entry.kindOf('/a/x.crdownload', isDir: false), FileKind.download);
+    });
+
+    test('falls back to mime type for media', () {
+      expect(Entry.kindOf('/a/x.mp3', isDir: false), FileKind.audio);
+      expect(Entry.kindOf('/a/x.jpg', isDir: false), FileKind.image);
+      expect(Entry.kindOf('/a/x.mp4', isDir: false), FileKind.video);
+    });
+
+    test('directories are always folders', () {
+      expect(Entry.kindOf('/a/sub', isDir: true), FileKind.folder);
+    });
+  });
+
+  group('FileRepository.sortEntries', () {
+    Entry e(String name, {int size = 0, int modMs = 0}) => Entry(
+      path: '/p/$name',
+      name: name,
+      isDir: false,
+      size: size,
+      modified: DateTime.fromMillisecondsSinceEpoch(modMs),
+      kind: FileKind.generic,
+    );
+
+    test('sorts by name ascending (case-insensitive) by default', () {
+      final sorted = FileRepository.sortEntries([e('b'), e('A'), e('c')], 0);
+      expect(sorted.map((x) => x.name).toList(), ['A', 'b', 'c']);
+    });
+
+    test('sorts by size descending (code 4)', () {
+      final sorted = FileRepository.sortEntries(
+        [e('s', size: 1), e('l', size: 9), e('m', size: 5)],
+        4,
+      );
+      expect(sorted.map((x) => x.size).toList(), [9, 5, 1]);
+    });
+
+    test('sorts by modified descending (code 3)', () {
+      final sorted = FileRepository.sortEntries(
+        [e('old', modMs: 1), e('new', modMs: 9)],
+        3,
+      );
+      expect(sorted.first.name, 'new');
     });
   });
 
