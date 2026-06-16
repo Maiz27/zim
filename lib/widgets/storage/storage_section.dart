@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../providers/core_provider.dart';
 import '../../utils/design_tokens.dart';
+import '../../utils/file_utils.dart';
 import '../custom_loader.dart';
 import 'storage_item.dart';
 
@@ -50,7 +51,7 @@ class _StorageSectionState extends State<StorageSection> {
             // Guard against idx pointing past a removed (e.g. SD) volume.
             final safeIdx = idx.clamp(0, coreProvider.availableStorage.length - 1);
             final FileSystemEntity item = coreProvider.availableStorage[safeIdx];
-            final String path = item.path.split('Android').first;
+            final String path = FileUtils.removeDataDirectory(item.path).path;
 
             final List<String> list = [
               for (int i = 0; i < coreProvider.availableStorage.length; i++)
