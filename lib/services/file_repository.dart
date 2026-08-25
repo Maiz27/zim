@@ -55,9 +55,8 @@ class FileRepository {
     return list(path, showHidden: showHidden).map(Entry.of).toList();
   }
 
-  /// Full recursive device scan, offloaded to a background isolate. Storage
-  /// roots are resolved here (platform channel) then the walk runs via
-  /// `compute`, so it never blocks the frame.
+  /// Full recursive device scan. The platform channel resolves storage roots
+  /// before `compute` runs the recursive walk on a background isolate.
   Future<List<Entry>> scan({bool showHidden = false}) async {
     final roots =
         (await FileUtils.getStorageList()).map((d) => d.path).toList();
